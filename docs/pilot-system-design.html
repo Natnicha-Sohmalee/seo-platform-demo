@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEO Platform Pilot · System Design</title>
+  <link rel="stylesheet" href="pilot-docs.css">
+</head>
+<body>
+  <div class="top"><div class="wrap"><div class="brand">SEO PLATFORM / PILOT GUIDE</div><nav aria-label="หน้าของเอกสาร"><a href="pilot-overview.html">Task guide</a><a href="pilot-system-design.html" aria-current="page">System design</a><a href="pilot-system-design.md">Design ต้นฉบับ</a></nav></div></div>
+  <header class="hero wrap">
+    <div class="eyebrow">เอกสารประกอบ Task</div>
+    <h1>System design ของ Local Pilot</h1>
+    <p class="lead">ใช้หน้านี้เมื่อรับ task แล้วต้องเข้าใจว่าข้อมูลไหลผ่านส่วนใด ตารางไหนเป็นเจ้าของข้อมูล และจุดเชื่อมไหนต้องระวัง กลับไปเลือกงานที่ <a href="pilot-overview.html">Task guide</a></p>
+    <div class="meta"><span class="chip">เป้าหมาย · 1 ลูกค้า</span><span class="chip blue">Windows + WSL/Docker</span><span class="chip amber">ข้อมูลทดลอง · AI ออนไลน์</span></div>
+  </header>
+  <main class="wrap">
+    <section id="architecture" aria-labelledby="architecture-title">
+      <div class="section-head"><h2 id="architecture-title">1. ส่วนประกอบและการไหลของข้อมูล</h2><p>เว็บและฐานข้อมูลอยู่บนเครื่องลูกค้า การอ่านเว็บไซต์และเรียก AI เป็นการเชื่อมต่อออกอินเทอร์เน็ต</p></div>
+      <div class="system-map" aria-label="ส่วนประกอบของระบบ">
+        <div class="panel system-node"><span class="label">ผู้ใช้งาน</span><strong>Browser ของลูกค้า</strong><p>กรอกข้อมูล เลือกงาน ตรวจ แก้ และดาวน์โหลดบทความ</p></div>
+        <div class="panel system-node local"><span class="label">ในเครื่อง · Next.js</span><strong>หน้าเว็บ + API</strong><p>ตรวจบัญชี รับคำสั่ง และประสานการอ่านเว็บ/AI</p></div>
+        <div class="panel system-node local"><span class="label">ในเครื่อง · Supabase</span><strong>Auth + Postgres</strong><p>เก็บบัญชี โปรเจกต์ งานอ่านเว็บ และงานเนื้อหา</p></div>
+        <div class="panel system-node local"><span class="label">ในเครื่อง · FastAPI</span><strong>Python Worker</strong><p>อ่านเว็บไซต์ที่สั่งและบันทึกผลแต่ละหน้า</p></div>
+        <div class="panel system-node remote"><span class="label">ออนไลน์</span><strong>เว็บไซต์สาธารณะ</strong><p>แหล่งข้อมูลที่ลูกค้าเลือกให้ Worker อ่าน</p></div>
+        <div class="panel system-node remote"><span class="label">ออนไลน์</span><strong>Gemini หรือ Typhoon</strong><p>รับบริบทที่เลือกและส่งผลลัพธ์กลับไปที่เว็บ</p></div>
+      </div>
+      <div class="flow-rows" aria-label="ลำดับการเชื่อมต่อ">
+        <div class="flow-row"><b>เปิดและบันทึกงาน</b><span>Browser ↔ Next.js / Supabase local · งานเดิมอ่านจากฐานข้อมูลโดยไม่เรียก AI ใหม่</span></div>
+        <div class="flow-row"><b>อ่านเว็บไซต์</b><span>Browser → <code>POST /api/crawl</code> → Worker → เว็บไซต์สาธารณะ → Worker บันทึกหน้าใน Supabase local</span></div>
+        <div class="flow-row"><b>ติดตามงาน</b><span>Browser → <code>GET /api/crawl/:jobId</code> → Next.js อ่านสถานะและหน้าจาก Supabase local</span></div>
+        <div class="flow-row"><b>สร้างเนื้อหา</b><span>Browser → <code>POST /api/content-brief</code> → AI provider → ผลกลับหน้าเว็บให้ตรวจ/แก้ → บันทึกใน Supabase local</span></div>
+      </div>
+      <div class="links-list"><a href="pilot-overview.html#web">งานหน้าเว็บ</a><a href="pilot-overview.html#worker">งาน Worker</a><a href="pilot-overview.html#database">งานฐานข้อมูล</a><a href="pilot-overview.html#ai">งาน AI</a></div>
+    </section>
+
+    <section id="journeys" aria-labelledby="journeys-title">
+      <div class="section-head"><h2 id="journeys-title">2. เส้นทางที่ต้องใช้งานได้ครบ</h2><p>สองทางเข้าจบที่บทความ Markdown เหมือนกัน คีย์เวิร์ดจาก CSV ใช้ประกอบได้ทั้งสองทาง</p></div>
+      <div class="rules">
+        <div class="panel rule"><span class="chip">มีเว็บไซต์</span><strong>โปรเจกต์ → Crawl → แผน → บทความ</strong><p>อ่านหน้าเว็บ ดูผล SEO เลือกหน้าเป็นแหล่งข้อมูล แล้วสร้างแผนและบทความ ลูกค้าตรวจ แก้ บันทึก เปิดต่อ และดาวน์โหลด</p></div>
+        <div class="panel rule"><span class="chip blue">ไม่มีเว็บไซต์</span><strong>โปรเจกต์ → ข้อมูลธุรกิจ → แผน → บทความ</strong><p>สร้างโปรเจกต์โดยไม่มี URL กรอกธุรกิจและกลุ่มเป้าหมาย แล้วทำแผนและบทความได้ทันที</p></div>
+      </div>
+      <p class="note" style="margin-top:12px"><strong>CSV เป็นทางเลือก:</strong> นำเข้าชุดคีย์เวิร์ดพร้อมที่มา/ช่วงข้อมูลและเลือกคำสำหรับแผน ระบบไม่อ้างว่าตัวเลขในไฟล์เป็นข้อมูลล่าสุด</p>
+      <div class="links-list"><a href="pilot-overview.html#ui1">UI1 · ไม่มีเว็บ</a><a href="pilot-overview.html#data1">DATA1 · แผน</a><a href="pilot-overview.html#data2">DATA2 · บทความ</a><a href="pilot-overview.html#v1">V1 · ตรวจมีเว็บ</a><a href="pilot-overview.html#v2">V2 · ตรวจไม่มีเว็บ</a></div>
+    </section>
+
+    <section id="data" aria-labelledby="data-title">
+      <div class="section-head"><h2 id="data-title">3. โปรเจกต์เป็นขอบเขตของข้อมูล</h2><p>หนึ่งธุรกิจใช้หนึ่งบัญชีใน pilot ทุกงานเนื้อหาอยู่ในโปรเจกต์ เว็บไซต์เป็นข้อมูลที่ไม่บังคับ</p></div>
+      <div class="panel mini-map"><div class="project">โปรเจกต์<small>เจ้าของคือบัญชีลูกค้า · website_url ว่างได้</small></div><div class="data-grid"><div>งานอ่านเว็บ<small>crawl_jobs → crawl_pages</small></div><div>ชุดคีย์เวิร์ด<small>ข้อมูลจาก CSV + ที่มา</small></div><div>แผนบทความ<small>บริบทและแหล่งข้อมูล</small></div><div>บทความ<small>ร่างที่แก้และส่งออกได้</small></div></div></div>
+      <div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>ข้อมูล</th><th>สภาพปัจจุบันใน branch</th><th>เป้าหมายใน pilot</th></tr></thead><tbody>
+        <tr><td><code>projects</code></td><td>ผูกกับ <code>user_id</code>; สร้างโปรเจกต์ต้องมี URL</td><td><code>website_url</code> ว่างได้; เป็นขอบเขตของงานทั้งหมด</td></tr>
+        <tr><td><code>crawl_jobs</code> / <code>crawl_pages</code></td><td>งานผูกโปรเจกต์แล้ว; Worker เขียนผลหน้าเว็บ</td><td>รักษาความสัมพันธ์และ unique (<code>crawl_job_id</code>, <code>url</code>); จัดการงานค้างหลัง restart</td></tr>
+        <tr><td><code>content_briefs</code></td><td>เก็บแผนและชุดคีย์เวิร์ดตาม <code>storage_key</code> ระดับบัญชี</td><td>เพิ่ม <code>project_id</code> และกรองงานตามโปรเจกต์</td></tr>
+        <tr><td><code>articles</code></td><td>เก็บบทความตาม <code>storage_key</code> ระดับบัญชี</td><td>เพิ่ม <code>project_id</code>; รักษา <code>version</code> กันการบันทึกชนกัน</td></tr>
+        <tr><td>AI usage / consent</td><td>ยังไม่มีตาราง/การบังคับใช้</td><td>เก็บจำนวนคำขอและหลักฐานยินยอม โดยไม่เก็บ key หรือ prompt</td></tr>
+      </tbody></table></div>
+      <p class="note" style="margin-top:12px"><strong>สำคัญ:</strong> ต้องมี SQL migration ใน repo ที่สร้าง schema และ RLS ซ้ำได้ ปัจจุบัน repo ยังไม่มี migration สำหรับฐานข้อมูลใหม่</p>
+      <div class="links-list"><a href="pilot-overview.html#db1">DB1 · Local stack</a><a href="pilot-overview.html#db2">DB2 · Migration</a><a href="pilot-overview.html#data1">DATA1 · แผน</a><a href="pilot-overview.html#data2">DATA2 · บทความ</a></div>
+    </section>
+
+    <section id="api" aria-labelledby="api-title">
+      <div class="section-head"><h2 id="api-title">4. จุดเชื่อมที่ intern จะเจอในโค้ด</h2><p>อ่านจากฝั่งซ้ายไปขวาเพื่อรู้ว่า request เริ่มตรงไหน ไปที่ใด และผลถูกเก็บอย่างไร</p></div>
+      <div class="table-wrap"><table><thead><tr><th>จุดเชื่อม</th><th>ทำหน้าที่</th><th>เริ่มดูจากไฟล์</th></tr></thead><tbody>
+        <tr><td><code>POST /api/crawl</code></td><td>ตรวจบัญชี/โปรเจกต์/URL → สร้าง job ใน DB → ส่งให้ Worker</td><td><a href="../src/app/api/crawl/route.ts">src/app/api/crawl/route.ts</a></td></tr>
+        <tr><td><code>GET /api/crawl/:jobId</code></td><td>อ่านสถานะและหน้าเว็บจาก DB พร้อมตรวจเจ้าของโปรเจกต์</td><td><a href="../src/app/api/crawl/%5BjobId%5D/route.ts">src/app/api/crawl/[jobId]/route.ts</a></td></tr>
+        <tr><td><code>POST /jobs</code> (Worker)</td><td>รับงาน crawl แล้วอ่าน/บันทึกผลทีละหน้า</td><td><a href="../worker/api.py">worker/api.py</a> · <a href="../worker/supabase_store.py">worker/supabase_store.py</a></td></tr>
+        <tr><td><code>POST /api/content-brief</code></td><td>action <code>recommend</code>, <code>brief</code>, <code>article</code> → AI provider</td><td><a href="../src/app/api/content-brief/route.ts">src/app/api/content-brief/route.ts</a> · <a href="../src/lib/ai-provider.ts">src/lib/ai-provider.ts</a></td></tr>
+        <tr><td>อ่าน/บันทึกงานเนื้อหา</td><td>เว็บใช้ Supabase client; ตรวจ <code>user_id</code> และ <code>version</code></td><td><a href="../src/lib/content-storage.ts">src/lib/content-storage.ts</a></td></tr>
+      </tbody></table></div>
+      <div class="links-list"><a href="pilot-overview.html#worker">งาน Worker</a><a href="pilot-overview.html#web">งานหน้าเว็บ</a><a href="pilot-overview.html#ai">งาน AI</a></div>
+    </section>
+
+    <section id="rules" aria-labelledby="rules-title">
+      <div class="section-head"><h2 id="rules-title">5. กติกาที่งานทุกส่วนต้องรักษา</h2><p>สิ่งเหล่านี้เป็นเงื่อนไขของ pilot ไม่ใช่แค่รายละเอียดในโค้ด</p></div>
+      <div class="rules">
+        <div class="panel rule"><span class="chip">สิทธิ์</span><strong>บัญชีหนึ่งเห็นเฉพาะงานของตน</strong><p>RLS และการตรวจเจ้าของโปรเจกต์ใน API ต้องสอดคล้องกัน แม้ pilot ใช้ลูกค้าเพียงบัญชีเดียวก็ทดสอบด้วยบัญชีที่สอง</p></div>
+        <div class="panel rule"><span class="chip">Crawl</span><strong>อ่านเฉพาะเว็บไซต์สาธารณะ</strong><p>การยอมรับ HTTP ของ Supabase local สำหรับ Worker ห้ามทำให้ตัวกรอง URL เป้าหมาย crawl ยอมรับ localhost/private network</p></div>
+        <div class="panel rule"><span class="chip blue">AI</span><strong>แจ้งข้อมูลและจำกัดคำขอ</strong><p>ข้อมูลจริงต้องยินยอมก่อนส่ง; จองสิทธิ์แบบ atomic ก่อนเรียก provider; เกินเพดานต้องไม่มี request ออก</p></div>
+        <div class="panel rule"><span class="chip blue">บันทึกงาน</span><strong>เปิดต่อโดยไม่สร้างใหม่</strong><p>การเปิดแผนหรือบทความเดิมไม่เรียก AI เอง และ <code>version</code> ต้องกันแท็บหนึ่งเขียนทับงานล่าสุดของอีกแท็บ</p></div>
+      </div>
+      <div class="links-list"><a href="pilot-overview.html#db2">DB2 · สิทธิ์</a><a href="pilot-overview.html#wk1">WK1 · URL</a><a href="pilot-overview.html#ai1">AI1 · ยินยอม</a><a href="pilot-overview.html#ai2">AI2 · เพดาน</a></div>
+    </section>
+
+    <section id="ai-design" aria-labelledby="ai-title">
+      <div class="section-head"><h2 id="ai-title">6. AI ส่งอะไรออกไป และคุมอย่างไร</h2><p>ทีมเลือก provider ผ่าน server env ตอนติดตั้ง ลูกค้าเห็นชื่อ provider และประเภทข้อมูลก่อนกดใช้งาน</p></div>
+      <div class="rules">
+        <div class="panel rule"><span class="chip blue">Gemini</span><strong>App limit + project spend cap</strong><p>ใช้คีย์/โปรเจกต์เฉพาะ pilot; ตั้งเพดานในแอปและ <a href="https://ai.google.dev/gemini-api/docs/billing/">spend cap ที่ provider</a> โดยตรวจค่าจริงจากบัญชีทีมก่อนส่งมอบ</p></div>
+        <div class="panel rule"><span class="chip blue">Typhoon</span><strong>App limit เป็นหลัก</strong><p>ใช้คีย์เฉพาะ pilot; <a href="https://docs.opentyphoon.ai/en/rate-limits/">rate limit ของ provider</a> จำกัดความถี่ ไม่ใช่เพดานการใช้รวมที่ยืนยันแล้ว</p></div>
+      </div>
+      <p class="note" style="margin-top:12px"><strong>ข้อมูลที่ส่ง:</strong> รายละเอียดธุรกิจ หัวข้อ กลุ่มเป้าหมาย คีย์เวิร์ดที่เลือก ข้อความจากหน้าที่เลือก และแผนบทความเมื่อสร้างบทความ คีย์ API อยู่ฝั่ง server; ผู้ดูแลเครื่องลูกค้ายังเข้าถึงค่า env ในเครื่องได้ จึงใช้คีย์เฉพาะ pilot และเพิกถอนเมื่อจบ</p>
+      <div class="links-list"><a href="pilot-overview.html#ai1">AI1 · แจ้งข้อมูล</a><a href="pilot-overview.html#ai2">AI2 · เพดาน</a><a href="pilot-overview.html#ai3">AI3 · สอง provider</a></div>
+    </section>
+
+    <section id="runtime" aria-labelledby="runtime-title">
+      <div class="section-head"><h2 id="runtime-title">7. ติดตั้งบนเครื่องลูกค้า</h2><p>ทีมติดตั้งครั้งแรก ลูกค้าเปิด/ปิดและใช้เองภายหลัง</p></div>
+      <div class="table-wrap"><table><thead><tr><th>ส่วน</th><th>รันที่ไหน</th><th>สิ่งที่ต้องตั้ง/ตรวจ</th></tr></thead><tbody>
+        <tr><td>Browser</td><td>Windows เครื่องลูกค้า</td><td>เปิดเว็บที่ <code>http://localhost:3000</code></td></tr>
+        <tr><td>Next.js</td><td>Linux ใน WSL</td><td>Supabase local URL/key, Worker URL/key, AI provider/key; secret ไม่ commit</td></tr>
+        <tr><td>Python Worker</td><td>Linux ใน WSL</td><td>Supabase local URL/key และ Worker API key; ตรวจ <code>/health</code></td></tr>
+        <tr><td>Supabase local</td><td>Docker บนเครื่องลูกค้า</td><td>Auth/Postgres/API และ migration จาก repo; bind ให้เข้าถึงเฉพาะเครื่องที่ต้องใช้</td></tr>
+        <tr><td>AI / เว็บไซต์เป้าหมาย</td><td>อินเทอร์เน็ต</td><td>การเชื่อมต่อและสิทธิ์ของคีย์/เว็บไซต์</td></tr>
+      </tbody></table></div>
+      <p class="note" style="margin-top:12px"><strong>ข้อจำกัด:</strong> <a href="https://supabase.com/docs/guides/local-development">Supabase local stack</a> ใช้กับ pilot ที่ข้อมูลทดลองเริ่มใหม่ได้ ไม่ใช่ฐาน production; รอบนี้ไม่ทำ backup ก่อนใช้จริงต้องออกแบบและทดสอบ backup/restore</p>
+      <div class="links-list"><a href="pilot-overview.html#db1">DB1 · Local stack</a><a href="pilot-overview.html#ops1">OPS1 · เปิด/ปิด</a><a href="pilot-overview.html#ops2">OPS2 · Bootstrap</a></div>
+    </section>
+
+    <section id="failure" aria-labelledby="failure-title">
+      <div class="section-head"><h2 id="failure-title">8. เมื่อบางส่วนไม่พร้อม</h2><p>Intern ใช้ตารางนี้กำหนดข้อความและทางไปต่อ ไม่ปล่อยให้ผู้ใช้เดาว่างานสำเร็จหรือไม่</p></div>
+      <div class="table-wrap"><table><thead><tr><th>เหตุการณ์</th><th>ผลที่ต้องเห็นใน Pilot</th><th>Task</th></tr></thead><tbody>
+        <tr><td>Worker ปิดหรือรับงานอยู่</td><td>แจ้งว่าเริ่ม crawl ไม่ได้/คิวเต็ม และให้ตรวจประวัติก่อนลองใหม่</td><td><a href="pilot-overview.html#wk1">WK1</a>, <a href="pilot-overview.html#v3">V3</a></td></tr>
+        <tr><td>ปิดระบบกลาง crawl</td><td>งานเดิมไม่แสดง running ตลอดไป; หน้าที่บันทึกแล้วคงอยู่</td><td><a href="pilot-overview.html#wk2">WK2</a></td></tr>
+        <tr><td>AI 429 หรือ timeout</td><td>แจ้งว่า provider ไม่พร้อม; เก็บงานเดิมไว้ และไม่สร้างผลปลอม</td><td><a href="pilot-overview.html#v3">V3</a></td></tr>
+        <tr><td>AI ครบเพดาน</td><td>หยุดก่อนส่ง request และแสดงจำนวนสิทธิ์คงเหลือ/เหตุผล</td><td><a href="pilot-overview.html#ai2">AI2</a></td></tr>
+        <tr><td>URL crawl ถูกปฏิเสธ</td><td>แสดงเหตุผล ไม่พยายามอ่าน private/localhost</td><td><a href="pilot-overview.html#wk1">WK1</a>, <a href="pilot-overview.html#v3">V3</a></td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="acceptance" aria-labelledby="acceptance-title">
+      <div class="section-head"><h2 id="acceptance-title">9. ภาพรวมเกณฑ์ส่งมอบ</h2></div>
+      <div class="panel accept"><ol><li>ติดตั้งจาก clone ใหม่บนเครื่องเป้าหมายได้โดยไม่ต้องเดา schema หรือ URL</li><li>ลูกค้าทำเส้นทางมีเว็บและไม่มีเว็บจนแก้ บันทึก เปิดต่อ และดาวน์โหลด Markdown ได้</li><li>บัญชีอื่นอ่าน/แก้งานของลูกค้าไม่ได้; AI ไม่ถูกเรียกเมื่อยังไม่ยินยอมหรือเกินเพดาน</li><li>กรณี Worker/AI ไม่พร้อมและ restart กลางงานมีสถานะกับทางไปต่อที่ชัดเจน</li></ol></div>
+      <div class="links-list"><a href="pilot-overview.html#delivery">งานตรวจรับ V1–V4</a></div>
+    </section>
+    <div class="source-links">แหล่งอ้างอิงใน repo: <a href="pilot-system-design.md">System design ต้นฉบับ</a><a href="pilot-task-list.md">Task list ต้นฉบับ</a><a href="../GLOSSARY.md">Glossary</a></div>
+  </main>
+  <footer><div class="wrap">SEO Platform · Local pilot · System design ประกอบ Task guide</div></footer>
+</body>
+</html>

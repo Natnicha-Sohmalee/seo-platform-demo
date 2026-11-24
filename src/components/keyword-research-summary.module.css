@@ -1,0 +1,31 @@
+.summary {
+  margin: 18px 0;
+  padding: 16px 20px;
+  border: 1px solid #c6e3d7;
+  border-radius: 10px;
+  background: #eff8f3;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.summary p {
+  margin: 5px 0;
+}
+.primary {
+  display: inline-block;
+  margin-inline-start: 12px;
+  color: var(--green);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.summary summary {
+  margin-top: 9px;
+  cursor: pointer;
+  color: var(--green);
+  font-weight: 600;
+}
+.summary details p {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}

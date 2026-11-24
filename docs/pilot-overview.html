@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEO Platform Pilot · Task Guide</title>
+  <link rel="stylesheet" href="pilot-docs.css">
+</head>
+<body>
+  <div class="top"><div class="wrap"><div class="brand">SEO PLATFORM / PILOT GUIDE</div><nav aria-label="หน้าของเอกสาร"><a href="pilot-overview.html" aria-current="page">Task guide</a><a href="pilot-system-design.html">System design</a><a href="pilot-task-list.md">Task list ต้นฉบับ</a></nav></div></div>
+  <header class="hero wrap">
+    <div class="eyebrow">เริ่มจากงานที่ต้องทำ</div>
+    <h1>เลือก Task แล้วลงมือทำ</h1>
+    <p class="lead">งานถูกจัดตามส่วนของระบบ เปิดการ์ดเพื่อดูสิ่งส่งมอบ งานที่ต้องรอ และวิธีตรวจรับ หากต้องการเข้าใจการเชื่อมต่อ ให้เปิด <a href="pilot-system-design.html">System design</a> จากงานนั้น</p>
+    <div class="meta"><span class="chip">Pilot 2 สัปดาห์</span><span class="chip blue">ทีม 3 คน</span><span class="chip amber">ลูกค้า 1 เจ้า · ข้อมูลทดลอง</span></div>
+  </header>
+  <main class="wrap">
+    <section aria-labelledby="start-title">
+      <div class="section-head"><h2 id="start-title">เริ่มร่วมกันก่อนแยกงาน</h2><p>วันแรกตกลง interface ให้ตรงกัน หลังจากนั้นเลือกงานคนละชิ้นในหมวดต่าง ๆ ได้</p></div>
+      <details class="task task-wide" id="c0">
+        <summary><span class="id">C0</span><span><strong>ตกลงสัญญาข้อมูลและการเชื่อมต่อ</strong><small>กำหนดรูปแบบข้อมูลร่วมกันก่อน DB, UI, Worker และ AI เริ่มแยกทำ</small></span></summary>
+        <div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>สรุป schema ตารางเดิมและตาราง AI, <code>project_id</code>, <code>website_url</code> ที่ว่างได้, env/URL ของแต่ละ process และข้อมูลตัวอย่างสองโปรเจกต์</dd><dt>ต้องรอ</dt><dd>ไม่มี · ทำร่วมกันวันแรก</dd><dt>ตรวจรับ</dt><dd>ทั้ง 3 คนใช้ชื่อฟิลด์และ URL ชุดเดียวกัน และสร้าง fixture แบบมีเว็บ/ไม่มีเว็บได้</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#architecture">ภาพระบบ</a> · <a href="pilot-system-design.html#data">โมเดลข้อมูล</a></dd></dl></div>
+      </details>
+      <div class="stage" aria-label="ลำดับงาน"><span>1 · C0 ร่วมกัน</span><b>→</b><span>2 · งานแต่ละส่วนทำพร้อมกัน</span><b>→</b><span>3 · เชื่อมระบบ</span><b>→</b><span>4 · ตรวจรับบนเครื่องลูกค้า</span></div>
+    </section>
+
+    <section class="group" id="database" aria-labelledby="database-title">
+      <div class="group-head"><h2 id="database-title">ข้อมูลและฐานข้อมูล</h2><p>ที่เก็บงานในเครื่องลูกค้า</p></div>
+      <div class="group-context"><span class="chip">DB / DATA</span><span>บัญชี → โปรเจกต์ → ผลอ่านเว็บ คีย์เวิร์ด แผน และบทความ</span><a href="pilot-system-design.html#data">ดู data model ↗</a></div>
+      <div class="task-grid">
+        <details class="task" id="db1"><summary><span class="id">DB1</span><span><strong>ตั้ง Supabase local</strong><small>ให้ clone ใหม่เปิด Auth, API และ Postgres ใน Docker ได้</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>config local และเวอร์ชัน CLI ที่ pin ไว้ พร้อม URL/key ในคู่มือ</dd><dt>ต้องรอ</dt><dd>C0</dd><dt>ตรวจรับ</dt><dd>เริ่ม local stack จาก clone ใหม่แล้วเรียก Auth/API และเชื่อม Postgres ได้</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#runtime">ตำแหน่งที่รันระบบ</a></dd></dl></div></details>
+        <details class="task" id="db2"><summary><span class="id">DB2</span><span><strong>สร้างตารางและสิทธิ์จาก Migration</strong><small>ฐานข้อมูลสร้างซ้ำได้ และบัญชีอื่นเข้าถึงงานลูกค้าไม่ได้</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>migration ของ 5 ตารางเดิม, AI usage/consent, FK, unique, index และ RLS</dd><dt>ต้องรอ</dt><dd>C0; ใช้ DB1 เมื่อต้องทดสอบบน local stack</dd><dt>ตรวจรับ</dt><dd>สร้างฐานจาก repo ได้ และบัญชีที่สองอ่านหรือแก้ข้อมูลบัญชีแรกไม่ได้</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#data">ตารางและความสัมพันธ์</a> · <a href="pilot-system-design.html#rules">กติกาสิทธิ์</a></dd></dl></div></details>
+        <details class="task" id="data1"><summary><span class="id">DATA1</span><span><strong>ผูกคีย์เวิร์ดและแผนกับโปรเจกต์</strong><small>งานเนื้อหาไม่ลอยอยู่ระดับบัญชีอีกต่อไป</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>บันทึก แสดงรายการ และกรองชุดคีย์เวิร์ด/แผนด้วย <code>project_id</code></dd><dt>ต้องรอ</dt><dd>DB2, UI2</dd><dt>ตรวจรับ</dt><dd>ทั้งแผนจากผล crawl และแผนที่เริ่มจากรายละเอียดธุรกิจอยู่ในโปรเจกต์ที่ถูกต้อง</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#data">ขอบเขตโปรเจกต์</a> · <a href="pilot-system-design.html#journeys">สองเส้นทางใช้งาน</a></dd></dl></div></details>
+        <details class="task" id="data2"><summary><span class="id">DATA2</span><span><strong>ผูกบทความกับโปรเจกต์</strong><small>เปิดต่อ บันทึก และส่งออกโดยไม่ปะปนกับโปรเจกต์อื่น</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>บันทึก แสดงรายการ กรอง เปิดต่อ และส่งออกบทความตาม <code>project_id</code></dd><dt>ต้องรอ</dt><dd>DB2, UI2</dd><dt>ตรวจรับ</dt><dd>เปิดบทความเดิมจากโปรเจกต์ถูกต้อง และการแก้ชนกันระหว่างแท็บไม่เขียนทับงานล่าสุด</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#data">ข้อมูลบทความ</a> · <a href="pilot-system-design.html#rules">การบันทึกชนกัน</a></dd></dl></div></details>
+      </div>
+    </section>
+
+    <section class="group" id="web" aria-labelledby="web-title">
+      <div class="group-head"><h2 id="web-title">หน้าเว็บ</h2><p>สิ่งที่ลูกค้าเห็นและกดใช้งาน</p></div>
+      <div class="group-context"><span class="chip">UI</span><span>รับข้อมูลลูกค้า → สั่ง Worker/AI → แสดงและบันทึกผล</span><a href="pilot-system-design.html#architecture">ดู data flow ↗</a></div>
+      <div class="task-grid">
+        <details class="task" id="ui1"><summary><span class="id">UI1</span><span><strong>สร้างโปรเจกต์โดยไม่บังคับเว็บไซต์</strong><small>ลูกค้าที่ไม่มีเว็บเริ่มทำบทความได้</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>หน้าสร้าง/เปิดโปรเจกต์รองรับ URL ว่าง และแสดงปุ่ม crawl เฉพาะเมื่อมีเว็บ</dd><dt>ต้องรอ</dt><dd>C0</dd><dt>ตรวจรับ</dt><dd>สร้างโปรเจกต์ไม่มี URL ได้ โดยไม่ใช้ URL ปลอม และเริ่มแผนบทความได้</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#journeys">เส้นทางไม่มีเว็บไซต์</a></dd></dl></div></details>
+        <details class="task" id="ui2"><summary><span class="id">UI2</span><span><strong>นำทางงานทั้งหมดจากโปรเจกต์</strong><small>คีย์เวิร์ด แผน และบทความเปิดจากพื้นที่เดียวกัน</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>ลิงก์และ state ที่ส่ง <code>project_id</code> ระหว่างหน้าคีย์เวิร์ด แผน และบทความ</dd><dt>ต้องรอ</dt><dd>C0</dd><dt>ตรวจรับ</dt><dd>เปลี่ยนโปรเจกต์แล้วเห็นเฉพาะงานของโปรเจกต์นั้น</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#data">ขอบเขตโปรเจกต์</a></dd></dl></div></details>
+      </div>
+    </section>
+
+    <section class="group" id="worker" aria-labelledby="worker-title">
+      <div class="group-head"><h2 id="worker-title">ตัวอ่านเว็บไซต์</h2><p>Python Worker ที่รับงาน crawl</p></div>
+      <div class="group-context"><span class="chip">WK</span><span>รับคำสั่งจากเว็บ → อ่านเว็บไซต์สาธารณะ → บันทึกหน้าที่ได้</span><a href="pilot-system-design.html#api">ดูจุดเชื่อม API ↗</a></div>
+      <div class="task-grid">
+        <details class="task" id="wk1"><summary><span class="id">WK1</span><span><strong>ให้ Worker เขียนฐานข้อมูล local ได้</strong><small>ยอมรับ local HTTP เฉพาะ URL ของ Supabase ในเครื่อง</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>config/validation ของ Supabase URL ฝั่ง Worker สำหรับ local stack</dd><dt>ต้องรอ</dt><dd>C0; ใช้ DB1 เมื่อต้องทดสอบจริง</dd><dt>ตรวจรับ</dt><dd>ผล job/page ลง DB local โดยตัวกรอง URL เป้าหมาย crawl ยังปฏิเสธ private/localhost</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#runtime">ตำแหน่งบริการ</a> · <a href="pilot-system-design.html#rules">กติกา URL</a></dd></dl></div></details>
+        <details class="task" id="wk2"><summary><span class="id">WK2</span><span><strong>จัดการงาน crawl หลัง restart</strong><small>งานที่ถูกขัดจังหวะไม่แสดงว่ากำลังทำตลอดไป</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>สถานะ interrupted/failed และทางให้เริ่มใหม่ โดยเก็บหน้าที่บันทึกแล้วไว้</dd><dt>ต้องรอ</dt><dd>DB2, WK1</dd><dt>ตรวจรับ</dt><dd>รีสตาร์ตกลางงานแล้ว UI อธิบายสถานะและเริ่มงานใหม่ได้</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#failure">กรณีระบบสะดุด</a></dd></dl></div></details>
+      </div>
+    </section>
+
+    <section class="group" id="ai" aria-labelledby="ai-title">
+      <div class="group-head"><h2 id="ai-title">AI และการควบคุมการใช้</h2><p>Gemini หรือ Typhoon · ทีมเลือกตอนติดตั้ง</p></div>
+      <div class="group-context"><span class="chip blue">AI</span><span>เว็บส่งข้อมูลที่เลือก → AI ส่งร่างกลับ → ลูกค้าตรวจและบันทึก</span><a href="pilot-system-design.html#ai-design">ดูขอบเขตข้อมูล ↗</a></div>
+      <div class="task-grid">
+        <details class="task" id="ai1"><summary><span class="id">AI1</span><span><strong>แจ้งก่อนส่งข้อมูลไป AI</strong><small>ลูกค้าเห็น provider และประเภทข้อมูลที่จะส่ง</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>ข้อความแจ้งและหลักฐานความยินยอมเมื่อใช้ข้อมูลจริง; ไม่มี key ใน browser/log</dd><dt>ต้องรอ</dt><dd>C0</dd><dt>ตรวจรับ</dt><dd>ยังไม่เรียก AI ก่อนการยินยอมเมื่อใช้ข้อมูลจริง; เปลี่ยน provider แล้วขอใหม่</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#ai-design">การส่งข้อมูล</a></dd></dl></div></details>
+        <details class="task" id="ai2"><summary><span class="id">AI2</span><span><strong>จำกัดจำนวนคำขอ AI ในแอป</strong><small>หยุดคำขอที่เกินเพดานก่อนส่งออกอินเทอร์เน็ต</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>ตัวนับใน DB ที่จองสิทธิ์แบบ atomic สำหรับ recommend, brief และ article พร้อมจำนวนคงเหลือใน UI</dd><dt>ต้องรอ</dt><dd>C0; ใช้ DB2 เมื่อต้องทดสอบตัวนับจริง</dd><dt>ตรวจรับ</dt><dd>กดพร้อมกันจนเกินเพดานแล้วไม่มี request ส่วนเกินไป provider</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#ai-design">ขอบเขต AI</a> · <a href="pilot-system-design.html#rules">กติกา quota</a></dd></dl></div></details>
+        <details class="task" id="ai3"><summary><span class="id">AI3</span><span><strong>ทดสอบสอง provider profile</strong><small>เลือก Gemini หรือ Typhoon ด้วย server env</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>config/คู่มือสองทางเลือกและ smoke test ใน dev</dd><dt>ต้องรอ</dt><dd>C0</dd><dt>ตรวจรับ</dt><dd>ทั้งสอง profile เรียกได้; Gemini ตั้ง spend cap ฝั่ง provider, Typhoon ใช้ app limit เป็นหลัก</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#ai-design">สอง provider</a></dd></dl></div></details>
+      </div>
+    </section>
+
+    <section class="group" id="delivery" aria-labelledby="delivery-title">
+      <div class="group-head"><h2 id="delivery-title">ติดตั้ง ตรวจรับ และส่งมอบ</h2><p>ทีมติดตั้งครั้งแรก แล้วลูกค้าเปิด/ปิดเอง</p></div>
+      <div class="group-context"><span class="chip amber">OPS / V</span><span>Windows → WSL/Docker → local services → ลูกค้าทดลองสองเส้นทาง</span><a href="pilot-system-design.html#runtime">ดู deployment ↗</a></div>
+      <div class="task-grid">
+        <details class="task" id="ops1"><summary><span class="id">OPS1</span><span><strong>ทำขั้นตอนเปิด/ปิดระบบ</strong><small>ลูกค้าเปิดใช้ซ้ำได้หลังทีมติดตั้งครั้งแรก</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>สคริปต์/คู่มือ WSL ตรวจ Docker, Node, Python, env, DB, Worker และเว็บ</dd><dt>ต้องรอ</dt><dd>C0</dd><dt>ตรวจรับ</dt><dd>เปิดและหยุดซ้ำได้โดยไม่ reset ข้อมูล และไม่มี secret ใน Git</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#runtime">runtime</a></dd></dl></div></details>
+        <details class="task" id="ops2"><summary><span class="id">OPS2</span><span><strong>เตรียมเครื่องและบัญชี Pilot</strong><small>ตั้ง provider, key และเพดานก่อนลูกค้าเริ่มใช้</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>บัญชีลูกค้าหนึ่งบัญชี คีย์ AI เฉพาะ pilot และค่า limit; Gemini ตั้ง spend cap หากเลือกใช้</dd><dt>ต้องรอ</dt><dd>DB1, DB2, OPS1, AI2, AI3</dd><dt>ตรวจรับ</dt><dd>ลูกค้าเปิดใช้เองโดยไม่ต้องตั้ง secret ซ้ำ</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#runtime">การติดตั้ง</a> · <a href="pilot-system-design.html#ai-design">provider profile</a></dd></dl></div></details>
+        <details class="task" id="v1"><summary><span class="id">V1</span><span><strong>ตรวจเส้นทางมีเว็บไซต์</strong><small>เริ่มจาก URL จนดาวน์โหลดบทความ</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>บันทึกผลการลองบนเครื่องลูกค้าจริง</dd><dt>ต้องรอ</dt><dd>DATA1, DATA2, WK2, OPS2</dd><dt>ตรวจรับ</dt><dd>สร้างโปรเจกต์ → crawl → เลือกข้อมูล → แผน → บทความ → แก้/บันทึก/เปิดใหม่/ดาวน์โหลด ผ่าน</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#journeys">เส้นทางมีเว็บไซต์</a></dd></dl></div></details>
+        <details class="task" id="v2"><summary><span class="id">V2</span><span><strong>ตรวจเส้นทางไม่มีเว็บไซต์และ CSV</strong><small>เริ่มจากรายละเอียดธุรกิจจนดาวน์โหลดบทความ</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>บันทึกผลการลองบนเครื่องลูกค้าจริง</dd><dt>ต้องรอ</dt><dd>DATA1, DATA2, OPS2</dd><dt>ตรวจรับ</dt><dd>โปรเจกต์ไม่มี URL → รายละเอียดธุรกิจ → แผน/บทความ; นำเข้า CSV; เปิดต่อหลัง restart ผ่าน</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#journeys">เส้นทางไม่มีเว็บไซต์</a></dd></dl></div></details>
+        <details class="task" id="v3"><summary><span class="id">V3</span><span><strong>ตรวจสิทธิ์ เพดาน และกรณีขัดข้อง</strong><small>ข้อผิดพลาดต้องบอกลูกค้าว่าไปต่ออย่างไร</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>ผลตรวจ RLS, AI limit, worker ปิด, AI 429/timeout, URL crawl ถูกปฏิเสธ และ restart กลางงาน</dd><dt>ต้องรอ</dt><dd>AI1, AI2, WK2, OPS2</dd><dt>ตรวจรับ</dt><dd>ทุกกรณีแสดงสถานะถูกต้องและมีทางไปต่อ</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#failure">failure paths</a></dd></dl></div></details>
+        <details class="task" id="v4"><summary><span class="id">V4</span><span><strong>ส่งมอบให้ลูกค้าใช้เอง</strong><small>ลูกค้าเปิด/ปิดและนำ Markdown ไปเผยแพร่เองได้</small></span></summary><div class="task-body"><dl><dt>สิ่งส่งมอบ</dt><dd>คู่มือเปิด/ปิด ผลทดสอบ ปัญหาคงค้าง และรายการที่ต้องเพิ่มก่อน production</dd><dt>ต้องรอ</dt><dd>V1, V2, V3</dd><dt>ตรวจรับ</dt><dd>ลูกค้าทำสองเส้นทางและส่งออกได้เอง</dd><dt>บริบท</dt><dd><a href="pilot-system-design.html#acceptance">เกณฑ์ส่งมอบ</a></dd></dl></div></details>
+      </div>
+    </section>
+
+    <div class="panel handoff"><h2>เลือกงานอย่างไร</h2><ul><li>เริ่ม C0 ร่วมกันในวันแรก แล้วเลือกงานในหมวดที่ยังไม่ชนไฟล์กัน</li><li>เปิดการ์ดดู “ต้องรอ” ก่อนเริ่มงานเชื่อมระบบหรือทดสอบ</li><li>อ่านหน้าที่เกี่ยวข้องใน <a href="pilot-system-design.html">System design</a> และเปิด <a href="pilot-task-list.md">task list ต้นฉบับ</a> เมื่อต้องการเกณฑ์ฉบับเต็ม</li><li>สถานะและเจ้าของงานจริงให้ติดตามใน GitHub Issues เมื่อทีมสร้าง issue; HTML นี้เป็นคู่มือ ไม่ใช่บอร์ดสถานะสด</li></ul></div>
+    <div class="source-links">เอกสารต้นฉบับ: <a href="pilot-task-list.md">Task list</a><a href="pilot-system-design.md">System design</a><a href="../GLOSSARY.md">Glossary</a></div>
+  </main>
+  <footer><div class="wrap">SEO Platform · Local pilot · คู่มือเลือกงานสำหรับ intern dev</div></footer>
+</body>
+</html>

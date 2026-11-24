@@ -1,0 +1,69 @@
+.runner {
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  line-height: 1.8;
+}
+.actions,
+.pageList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.runner button {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid #cdd9d4;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--green);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.runner button:hover {
+  background: var(--mint);
+}
+.runner button:focus-visible {
+  outline: 3px solid #9ee4cd;
+  outline-offset: 3px;
+}
+.runner button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pageList {
+  margin: 18px 0;
+}
+.pageList button {
+  max-width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.runner button.selected {
+  background: var(--mint);
+  border-color: var(--green);
+}
+.url {
+  overflow-wrap: anywhere;
+}
+.storage {
+  color: var(--muted);
+  font-size: 13px;
+}
+.warning {
+  color: #7f5a1f;
+  overflow-wrap: anywhere;
+}
+.content {
+  max-height: 500px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 18px;
+  background: #f5f8f6;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.8;
+}

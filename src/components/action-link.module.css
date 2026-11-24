@@ -1,0 +1,47 @@
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.primary:hover {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+  color: #fff;
+}
+.secondary {
+  background: #fff;
+  border-color: #cdd9d4;
+  color: var(--ink);
+}
+.secondary:hover {
+  background: #f3f8f5;
+  border-color: #a9c4b9;
+  color: var(--green);
+}
+.action:focus-visible {
+  outline: 3px solid #9ee4cd;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .action {
+    transition: none;
+  }
+}

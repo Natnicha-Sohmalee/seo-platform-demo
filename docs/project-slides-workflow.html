@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEO Platform · สไลด์เน้นการทำงาน (Workflow, Keyword & Optimize)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2a5c; --navy-deep:#07142e; --blue:#2563eb; --sky:#38bdf8;
+  --ice:#e0f2fe; --mist:#f4f8ff; --ink:#172b4d; --muted:#526885;
+  --white:#ffffff; --border:#dbeafe;
+  --ok-bg:#d1fae5; --ok-fg:#047857;
+  --wip-bg:#fef3c7; --wip-fg:#92400e;
+  --todo-bg:#ffe4e6; --todo-fg:#be123c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;background:var(--navy-deep);
+  font-family:"Prompt",Tahoma,sans-serif;color:var(--ink);overflow:hidden;
+}
+#stage{
+  position:absolute;top:50%;left:50%;width:1280px;height:720px;transform-origin:center;
+}
+.slide{
+  position:absolute;inset:0;border-radius:24px;overflow:hidden;padding:42px 56px 54px;
+  background:linear-gradient(165deg,#ffffff 0%,var(--mist) 62%,var(--ice) 100%);
+  opacity:0;transform:translateX(36px) scale(.985);transition:all .38s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;display:flex;flex-direction:column;
+}
+.slide.active{opacity:1;transform:none;pointer-events:auto}
+.slide.dark{
+  background:radial-gradient(circle at 18% 18%,#1e40af 0%,var(--navy) 56%,#06132e 100%);
+  color:#fff;
+}
+.slide::before,.slide::after{
+  content:"";position:absolute;border-radius:50%;z-index:0;pointer-events:none;
+}
+.slide::before{width:340px;height:340px;right:-120px;top:-130px;background:radial-gradient(circle,#bae6fd,transparent 70%);opacity:.5}
+.slide::after{width:280px;height:280px;left:-100px;bottom:-120px;background:radial-gradient(circle,#c7d2fe,transparent 70%);opacity:.45}
+.slide.dark::before{background:radial-gradient(circle,#38bdf8,transparent 70%);opacity:.28}
+.slide.dark::after{background:radial-gradient(circle,#818cf8,transparent 70%);opacity:.25}
+.slide>*{position:relative;z-index:1}
+
+.head{margin-bottom:16px}
+.tag{
+  display:inline-block;padding:5px 14px;border-radius:999px;
+  background:var(--ice);color:var(--blue);font-size:13.5px;font-weight:600;margin-bottom:8px;
+}
+.dark .tag{background:rgba(255,255,255,.14);color:#bae6fd}
+h1{font-size:52px;line-height:1.18;font-weight:700;color:var(--navy)}
+.dark h1{color:#fff}
+h2{font-size:32px;line-height:1.22;font-weight:700;color:var(--navy)}
+.dark h2{color:#fff}
+.sub{font-size:17px;color:var(--muted);margin-top:4px;font-weight:400}
+.dark .sub{color:#cbdcf7}
+.grad{background:linear-gradient(90deg,var(--sky),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.dark .grad{background:linear-gradient(90deg,#7dd3fc,#c7d2fe);-webkit-background-clip:text;background-clip:text}
+
+.body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;min-height:0}
+.row{display:flex;gap:16px;align-items:stretch}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+
+.card{
+  background:rgba(255,255,255,.95);border-radius:18px;padding:18px 20px;
+  border:1.5px solid var(--border);box-shadow:0 8px 22px rgba(30,64,175,.07);
+}
+.dark .card{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18);box-shadow:none}
+.card h3{font-size:19px;color:var(--navy);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.dark .card h3{color:#fff}
+.card p,.card li{font-size:14.8px;color:var(--muted);line-height:1.56}
+.dark .card p,.dark .card li{color:#dbeafe}
+.card ul{padding-left:18px}
+.card li+li{margin-top:4px}
+.icon{font-size:30px;line-height:1;margin-bottom:6px}
+
+.pill{
+  display:inline-block;padding:4px 11px;border-radius:999px;font-size:12.5px;
+  font-weight:600;margin:3px 4px 0 0;
+}
+.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.wip{background:var(--wip-bg);color:var(--wip-fg)}
+.todo{background:var(--todo-bg);color:var(--todo-fg)}
+.info{background:var(--ice);color:var(--blue)}
+
+.flow{display:flex;align-items:stretch;gap:8px}
+.flow .card{flex:1;padding:15px 14px;text-align:center}
+.flow .arrow{align-self:center;font-size:24px;color:var(--blue);font-weight:700}
+.step-num{
+  width:32px;height:32px;border-radius:10px;display:inline-grid;place-items:center;
+  background:linear-gradient(135deg,var(--sky),var(--blue));color:#fff;font-size:15px;font-weight:700;
+  margin-bottom:8px;
+}
+
+.banner{
+  background:linear-gradient(90deg,#eff6ff,#ffffff);
+  border-left:5px solid var(--blue);
+}
+
+.footer{
+  position:absolute;left:56px;right:56px;bottom:16px;
+  display:flex;justify-content:space-between;font-size:12px;color:#7b93b3;z-index:1;
+}
+.dark .footer{color:#94b3e0}
+#bar{
+  position:fixed;top:0;left:0;height:4px;
+  background:linear-gradient(90deg,var(--sky),var(--blue));transition:width .35s;z-index:10;
+}
+#nav{
+  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:10px;z-index:10;
+  background:rgba(15,42,92,.78);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.18);padding:6px 12px;border-radius:999px;
+  color:#e0f2fe;font-size:13px;
+}
+#nav button{
+  border:0;background:#fff;color:var(--navy);width:30px;height:30px;
+  border-radius:50%;font-size:16px;cursor:pointer;font-weight:700;
+}
+#nav button:hover{background:var(--ice)}
+#jump{
+  background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;
+  border-radius:999px;padding:3px 10px;font-family:inherit;font-size:12.5px;cursor:pointer;
+}
+#jump option{color:var(--navy);background:#fff}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- SLIDE 1: TITLE -->
+<section class="slide dark">
+  <div class="body" style="justify-content:center">
+    <div style="max-width:920px">
+      <span class="tag">SEO Platform · สไลด์อธิบายการทำงาน</span>
+      <h1>ระบบทำงานอย่างไร?<br><span class="grad">ตั้งแต่เก็บข้อมูล · เลือก Keyword<br>จนถึงการ Optimize บทความ</span></h1>
+      <p class="sub" style="margin-top:16px;font-size:19px">
+        อธิบายให้เห็นภาพเข้าใจง่าย ไม่เน้นศัพท์เทคนิคเชิงลึก แต่ครบทุกขั้นตอนการทำงานจริงของระบบและแนวทางการทำ Demo
+      </p>
+      <div style="margin-top:20px">
+        <span class="pill info">ภาพรวม Flowchart ทั้งระบบ</span>
+        <span class="pill info">การทำงานของ Keyword</span>
+        <span class="pill info">การ Optimize บทความ</span>
+        <span class="pill info">เครื่องมือ &amp; จุดทำ Demo</span>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · สไลด์เน้นการทำงาน</span><span>ใช้ลูกศร ← → หรือ Space เพื่อเปลี่ยนหน้า · กด F เพื่อเต็มจอ</span></div>
+</section>
+
+<!-- SLIDE 2: END-TO-END FLOWCHART OVERVIEW -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">01 · ภาพรวมการทำงานทั้งระบบ (ตาม Flowchart)</span>
+    <h2>วงจรการทำงานตั้งแต่เริ่มสร้าง จนถึงการติดตามผลและปรับปรุงซ้ำ</h2>
+    <p class="sub">ทุกงานถูกรวมอยู่ใน "Dashboard ของโปรเจกต์" เพื่อให้เปิดทำต่อหรือวนกลับมาแก้ไขได้ตลอด</p>
+  </div>
+  <div class="body">
+    <div class="flow">
+      <div class="card">
+        <div class="step-num">1</div>
+        <h3>เตรียมข้อมูลร้าน</h3>
+        <p>เข้าสู่ระบบ → เลือกโปรเจกต์ → ให้ระบบอ่านเว็บไซต์ หรือกรอกรายละเอียดธุรกิจ</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">2</div>
+        <h3>เลือก Keyword &amp; หัวข้อ</h3>
+        <p>เลือกคีย์เวิร์ดจากไฟล์ CSV หรือระบุเรื่องเอง → ให้ AI เสนอหัวข้อและสร้างแผนบทความ</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">3</div>
+        <h3>ร่าง &amp; Optimize</h3>
+        <p>AI สร้างร่างบทความ → ผู้ใช้แก้ไขเนื้อหาและข้อมูล SEO → บันทึกและส่งออกไฟล์ Markdown</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">4</div>
+        <h3>เผยแพร่ &amp; ปรับปรุง</h3>
+        <p>นำไปโพสต์ลงเว็บ → ติดตามผลและอันดับ (GSC / SERP) → เลือกบทความวนกลับมาปรับปรุง</p>
+      </div>
+    </div>
+    <div class="card banner">
+      <h3>🔄 จุดเด่นของวงจรนี้: ไม่ใช่ทำครั้งเดียวจบ</h3>
+      <p>ผู้ใช้สามารถเปิด <b>คลังคอนเทนต์</b> จาก Dashboard เพื่อค้นหา กรองสถานะ และเปิดงานเดิมกลับมาแก้ไขต่อได้ทันที หรือเมื่อโพสต์ไปแล้วเห็นสถิติว่าบทความไหนควรปรับปรุง ก็วนกลับมาที่หน้า <b>"แก้ไขเนื้อหาและข้อมูล SEO"</b> ได้อย่างต่อเนื่อง</p>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 01 ภาพรวมการทำงาน</span><span>2 / 12</span></div>
+</section>
+
+<!-- SLIDE 3: TWO STARTING PATHS -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">02 · จุดเริ่มต้นของการสร้างคอนเทนต์</span>
+    <h2>เริ่มจากข้อมูลจริงของธุรกิจ รองรับทั้งร้านที่มีเว็บและไม่มีเว็บ</h2>
+    <p class="sub">ช่วยให้ AI มีวัตถุดิบจริงในการเขียน ไม่ต้องเดาหรือแต่งเรื่องขึ้นมาเอง</p>
+  </div>
+  <div class="body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="icon">🌐</div>
+        <h3>เส้นทางที่ 1: ธุรกิจที่มีเว็บไซต์อยู่แล้ว</h3>
+        <ul>
+          <li>ใส่ลิงก์เว็บไซต์ของร้าน ระบบจะส่งตัวอ่านเว็บ (Crawler) เข้าไปเก็บเนื้อหาทีละหน้า</li>
+          <li>แปลงหน้าเว็บให้เป็นข้อความสะอาด พร้อมตรวจสุขภาพ SEO เบื้องต้นของหน้าเว็บเดิม</li>
+          <li>ผู้ใช้ติ๊กเลือกหน้าเว็บที่ต้องการใช้เป็นข้อมูลอ้างอิงในการวางแผนบทความ</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="icon">🏪</div>
+        <h3>เส้นทางที่ 2: ธุรกิจที่ยังไม่มีเว็บไซต์</h3>
+        <ul>
+          <li>เริ่มได้ทันทีโดยกรอก <b>รายละเอียดธุรกิจ</b> เช่น ขายสินค้า/บริการอะไร, ลูกค้าคือใคร, จุดเด่นคืออะไร</li>
+          <li>ระบบจะใช้ข้อความที่เจ้าของร้านเล่าเป็นแหล่งข้อมูลตั้งต้นแทนหน้าเว็บ</li>
+          <li>มีกติกากำกับไม่ให้ AI แอบค้นเว็บอื่นหรือสวมรอยแบรนด์อื่นมาเขียน</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card banner">
+      <p><b>ผลลัพธ์ของขั้นตอนนี้:</b> ไม่ว่าจะมาจากเส้นทางไหน ระบบจะได้ <b>"ข้อมูลอ้างอิงของธุรกิจ"</b> ที่พร้อมนำไปจับคู่กับ <b>Keyword</b> ในขั้นตอนถัดไป</p>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 02 จุดเริ่มต้น 2 เส้นทาง</span><span>3 / 12</span></div>
+</section>
+
+<!-- SLIDE 4: KEYWORD - WHAT & GOAL -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">03 · KEYWORD · คืออะไรและมีเป้าหมายอย่างไร</span>
+    <h2>Keyword: เข็มทิศที่บอกว่าลูกค้ากำลังค้นหาคำว่าอะไร</h2>
+    <p class="sub">ใช้ข้อมูลคำค้นหาจริงจากไฟล์ตาราง แทนการนั่งเดาคำเอง</p>
+  </div>
+  <div class="body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="icon">🔑</div>
+        <h3>Keyword ในระบบนี้คืออะไร?</h3>
+        <p>คือ <b>"คำที่ลูกค้าพิมพ์ลงในช่องค้นหา Google"</b> เวลาต้องการหาสินค้า บริการ หรือคำตอบ</p>
+        <p style="margin-top:8px">ในระบบนี้ เราไม่ได้ให้ AI มโนคำค้นขึ้นมาเอง แต่ให้ผู้ใช้นำ <b>ไฟล์ตารางคำค้นหาจริง (CSV)</b> จากเครื่องมือของ Google (Keyword Planner) มาเก็บไว้เป็น <b>"ชุดคีย์เวิร์ด"</b> ที่มีที่มาและช่วงเวลาชัดเจน</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎯</div>
+        <h3>เป้าหมายสำคัญ 3 ข้อ</h3>
+        <ul>
+          <li><b>เขียนเรื่องที่คนหาอ่านจริง:</b> ไม่เสียเวลาเขียนบทความที่ไม่มีคนค้นหา</li>
+          <li><b>ซื่อสัตย์ต่อข้อมูล:</b> แสดงที่มา พื้นที่ และช่วงเดือนตามไฟล์จริง ไม่แต่งตัวเลขเพิ่ม และไม่เอาตัวเลขโฆษณามาหลอกว่าติดอันดับง่าย</li>
+          <li><b>ใช้คำอย่างเป็นธรรมชาติ:</b> ป้องกันการยัดคีย์เวิร์ดซ้ำๆ จนอ่านไม่รู้เรื่อง</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 03 Keyword คืออะไรและเป้าหมาย</span><span>4 / 12</span></div>
+</section>
+
+<!-- SLIDE 5: KEYWORD - HOW IT WORKS -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">04 · KEYWORD · ทำงานอย่างไร</span>
+    <h2>4 ขั้นตอนการทำงานของระบบ Keyword</h2>
+    <p class="sub">ตั้งแต่นำเข้าไฟล์ตาราง จนถึงการส่งคำให้ AI ใช้วางแผนบทความ</p>
+  </div>
+  <div class="body">
+    <div class="flow">
+      <div class="card">
+        <div class="step-num">1</div>
+        <h3>อัปโหลดไฟล์ CSV</h3>
+        <p>โยนไฟล์ตารางจาก Google เข้ามา ระบบจับคู่คอลัมน์คำค้นและปริมาณค้นหาให้อัตโนมัติ (สูงสุด 1,000 คำ/ไฟล์) <b>โดยยังไม่เรียก AI</b></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">2</div>
+        <h3>ติดป้ายกำกับที่มา</h3>
+        <p>บันทึกพื้นที่ (เช่น ประเทศไทย) ช่วงเดือน และเครือข่ายของข้อมูลไว้เสมอ เพื่อความโปร่งใสของข้อมูล</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">3</div>
+        <h3>เลือก 1 คำหลัก + 4 คำประกอบ</h3>
+        <p>ติ๊กเลือกคำที่จะใช้ในบทความนี้สูงสุด <b>5 คำ</b> (คำแรกเป็นพระเอกของเรื่อง อีก 4 คำเป็นคำขยายความ)</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">4</div>
+        <h3>ส่งให้ AI เป็นเข็มทิศ</h3>
+        <p>ส่งคำที่เลือกไปให้ AI ตั้งชื่อเรื่อง วางโครงสร้าง และแทรกคำในเนื้อหาอย่างเป็นธรรมชาติโดยห้ามยัดคำ</p>
+      </div>
+    </div>
+    <div class="card banner">
+      <p><b>ทำไมต้องจำกัดแค่ 1 คำหลัก + 4 คำประกอบ?</b> เพื่อให้บทความ 1 ชิ้นมีโฟกัสที่ชัดเจน ไม่จับฉ่าย และช่วยให้ AI กระจายคำลงในหัวข้อและเนื้อหาได้อย่างพอดี</p>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 04 Keyword ทำงานอย่างไร</span><span>5 / 12</span></div>
+</section>
+
+<!-- SLIDE 6: KEYWORD - TOOLS -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">05 · KEYWORD · เครื่องมือในระบบ</span>
+    <h2>เครื่องมือที่ใช้จัดการ Keyword ตั้งแต่ต้นจนจบ</h2>
+    <p class="sub">ออกแบบให้ผู้ประกอบการนำไฟล์ตารางมาใช้ต่อได้ง่ายโดยไม่ต้องจัดตารางใหม่เอง</p>
+  </div>
+  <div class="body">
+    <div class="grid g4">
+      <div class="card">
+        <div class="icon">📥</div>
+        <h3>1. หน้านำเข้าคีย์เวิร์ด</h3>
+        <p>หน้าจอสำหรับอัปโหลดไฟล์ CSV ระบุชื่อชุดคีย์เวิร์ด พื้นที่ และช่วงเดือนของข้อมูล</p>
+      </div>
+      <div class="card">
+        <div class="icon">🧹</div>
+        <h3>2. ตัวอ่านตารางอัตโนมัติ</h3>
+        <p>ระบบอ่านไฟล์และจับคู่หัวตารางอัตโนมัติ (รองรับทั้งหัวตารางภาษาไทยและอังกฤษ) พร้อมจำกัดขนาดไม่ให้หน้าเว็บค้าง</p>
+      </div>
+      <div class="card">
+        <div class="icon">☑️</div>
+        <h3>3. ตัวเลือกคำหลัก-คำประกอบ</h3>
+        <p>ตารางเลือกคำค้นหาที่จัดลำดับให้คำแรกเป็น <b>คำหลัก</b> และอีกไม่เกิน 4 คำเป็น <b>คำประกอบ</b> ก่อนส่งไปหน้าวางแผน</p>
+      </div>
+      <div class="card">
+        <div class="icon">📌</div>
+        <h3>4. กล่องสรุปคีย์เวิร์ด</h3>
+        <p>แถบแสดงคำหลัก คำประกอบ และที่มาของข้อมูลค้างไว้ให้เห็นตลอดระหว่างวางแผนและแก้ไขบทความ</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 05 เครื่องมือ Keyword</span><span>6 / 12</span></div>
+</section>
+
+<!-- SLIDE 7: AI PLANNING & DRAFTING BRIDGE -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">06 · จากข้อมูลร้าน + Keyword สู่การสร้างบทความด้วย AI</span>
+    <h2>AI ทำงานเป็น 3 จังหวะ เพื่อให้คนตรวจทานได้ก่อนเขียนจริง</h2>
+    <p class="sub">ไม่กระโดดไปเขียนบทความยาวทันที แต่ให้เจ้าของร้านเห็นและแก้แผนก่อน</p>
+  </div>
+  <div class="body">
+    <div class="grid g3">
+      <div class="card">
+        <div class="step-num">1</div>
+        <h3>เสนอ 3 หัวข้อที่น่าเขียน</h3>
+        <p>AI อ่านข้อมูลร้านและ Keyword แล้วเสนอ <b>3 หัวข้อ</b> พร้อมอธิบายเหตุผลและกลุ่มคนอ่านเป้าหมาย (หรือเจ้าของร้านจะพิมพ์หัวข้อเองก็ได้)</p>
+      </div>
+      <div class="card">
+        <div class="step-num">2</div>
+        <h3>สร้างแผนบทความ 9 ส่วน</h3>
+        <p>เมื่อได้หัวข้อแล้ว AI จะวางโครงร่างแผนบทความ <b>9 หัวข้อหลัก</b> ให้เจ้าของร้านตรวจและแก้ไขได้ก่อนสั่งเขียนจริง</p>
+      </div>
+      <div class="card">
+        <div class="step-num">3</div>
+        <h3>เขียนร่างบทความ + ข้อมูล SEO</h3>
+        <p>AI เขียนเนื้อหาตามแผน พร้อมคิดชื่อเรื่องสำหรับ Google, คำโปรย, ชื่อลิงก์ และลิสต์จุดที่เจ้าของร้านควรเช็กความถูกต้อง</p>
+      </div>
+    </div>
+    <div class="card banner">
+      <h3>🛡️ กติกาควบคุม AI ของระบบ</h3>
+      <p>ใช้เฉพาะข้อมูลที่ผู้ใช้ให้มาเท่านั้น ห้ามแต่งตัวเลข สถิติ รีวิว หรืออ้างอิงปลอมขึ้นมาเอง และระบบจะตรวจว่าแผนบทความมีครบทั้ง 9 ส่วนและอ้างอิงแหล่งข้อมูลถูกต้องก่อนนำไปใช้งาน</p>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 06 การวางแผนและร่างบทความด้วย AI</span><span>7 / 12</span></div>
+</section>
+
+<!-- SLIDE 8: OPTIMIZE - WHAT & GOAL -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">07 · OPTIMIZE บทความ · คืออะไรและมีเป้าหมายอย่างไร</span>
+    <h2>Optimize บทความ: การจัดหน้าร้านและป้ายหน้าร้านให้คนค้นเจอ</h2>
+    <p class="sub">ปรับแต่งทั้งเนื้อหาข้างในและข้อมูลสำหรับ Google ทั้งก่อนโพสต์และหลังโพสต์</p>
+  </div>
+  <div class="body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="icon">✨</div>
+        <h3>Optimize บทความ คืออะไร?</h3>
+        <p>เปรียบเหมือน <b>"การจัดหน้าร้านและป้ายหน้าร้าน"</b> แม้สินค้าข้างใน (เนื้อหา) จะดี แต่ถ้าป้ายหน้าร้านไม่ชัด คนเดินผ่าน (Google และผู้ค้นหา) ก็ไม่รู้ว่าขายอะไร</p>
+        <p style="margin-top:8px">จึงเป็นการปรับแต่งทั้ง <b>โครงสร้างเนื้อหา</b> และ <b>ข้อมูลหน้าปกสำหรับ Google</b> (ชื่อเรื่องบน Google, คำโปรยใต้ลิงก์, ชื่อลิงก์ URL) ให้ชัดเจน อ่านง่าย และตรงกับคำค้นหา</p>
+      </div>
+      <div class="card">
+        <div class="icon">🏆</div>
+        <h3>เป้าหมายสำคัญ 4 ข้อ</h3>
+        <ul>
+          <li><b>ให้คนค้นเจอ:</b> มีองค์ประกอบ SEO ครบถ้วนและตรงกับ Keyword ที่เลือกไว้</li>
+          <li><b>ให้คนอยากคลิกและอ่านจบ:</b> ชื่อเรื่องและคำโปรยดึงดูด เนื้อหาแบ่งหัวข้ออ่านง่าย</li>
+          <li><b>ข้อมูลแม่นยำก่อนเผยแพร่:</b> มีการตรวจทานจุดที่ AI เตือนก่อนเอาไปโพสต์จริง</li>
+          <li><b>ปรับปรุงซ้ำได้ต่อเนื่อง:</b> เมื่อโพสต์แล้วผลยังไม่ดี ก็วนกลับมาแก้ให้ดีขึ้นได้</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 07 Optimize บทความ คืออะไรและเป้าหมาย</span><span>8 / 12</span></div>
+</section>
+
+<!-- SLIDE 9: OPTIMIZE - HOW IT WORKS -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">08 · OPTIMIZE บทความ · ทำงานอย่างไร</span>
+    <h2>4 ขั้นตอนการ Optimize บทความในระบบ</h2>
+    <p class="sub">ตั้งแต่ตรวจปัญหาเว็บเดิม ไปจนถึงการแก้ไขเนื้อหาและข้อมูล SEO ในหน้าเดียว</p>
+  </div>
+  <div class="body">
+    <div class="flow">
+      <div class="card">
+        <div class="step-num">1</div>
+        <h3>ตรวจจุดอ่อนเว็บเดิม</h3>
+        <p>ระบบสแกนหน้าเว็บที่อ่านมาได้ เพื่อชี้เป้าปัญหาพื้นฐาน เช่น หน้าเว็บเสีย (404), ลืมตั้งชื่อหน้า หรือชื่อหน้าซ้ำกัน</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">2</div>
+        <h3>เตรียมข้อมูล SEO ตั้งต้น</h3>
+        <p>เมื่อสร้างบทความ ระบบเตรียมชื่อเรื่อง SEO, คำโปรยใต้ลิงก์, ชื่อ URL และ <b>โน้ตเตือนจุดที่ต้องตรวจทาน</b> มาให้พร้อม</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">3</div>
+        <h3>ปรับแก้ใน 3 มุมมอง</h3>
+        <p>ผู้ใช้สลับแก้ได้ในหน้าเดียว: <b>1. แก้เนื้อหา</b> (เหมือน Word) <b>2. ดูตัวอย่าง</b> และ <b>3. ตั้งค่า SEO</b> พร้อมเทียบกับ Keyword</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">4</div>
+        <h3>บันทึก &amp; ส่งออกไฟล์</h3>
+        <p>บันทึกเก็บในคลังโปรเจกต์ (เปิดมาแก้ต่อได้โดยไม่เสียโควตา AI) และดาวน์โหลดเป็นไฟล์ <code>.md</code> ไปโพสต์ขึ้นเว็บ</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 08 Optimize บทความ ทำงานอย่างไร</span><span>9 / 12</span></div>
+</section>
+
+<!-- SLIDE 10: POST-PUBLISH OPTIMIZATION LOOP -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">09 · วงจรติดตามผลและกลับมา Optimize ซ้ำ (ตาม Flowchart)</span>
+    <h2>เมื่อโพสต์ลงเว็บแล้ว ทำงานต่ออย่างไร?</h2>
+    <p class="sub">ภาพรวมวงจรหลังเผยแพร่ เพื่อนำข้อมูลสถิติจริงกลับมาพัฒนาบทความให้ติดอันดับดีขึ้น</p>
+  </div>
+  <div class="body">
+    <div class="flow">
+      <div class="card">
+        <div class="step-num">1</div>
+        <h3>นำไปเผยแพร่ &amp; บันทึก URL</h3>
+        <p>ผู้ใช้เอาไฟล์ Markdown ไปโพสต์บนเว็บจริง แล้วกลับมาบันทึก URL วันที่เผยแพร่ และเลือกคีย์เวิร์ดที่จะติดตาม</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">2</div>
+        <h3>ดึงสถิติการค้นหาจริง</h3>
+        <p>เชื่อมข้อมูลจาก <b>Google Search Console</b> (ยอดคนเห็น, ยอดคลิก, CTR, อันดับเฉลี่ย) และ <b>บริการตรวจอันดับ SERP</b></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">3</div>
+        <h3>ดูแนวโน้มบน Dashboard</h3>
+        <p>แสดงกราฟและตารางแนวโน้มของแต่ละบทความ ทำให้เห็นทันทีว่าบทความไหนอันดับตก หรือคนเห็นเยอะแต่ไม่คลิก</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="card">
+        <div class="step-num">4</div>
+        <h3>วนกลับมา Optimize ใหม่</h3>
+        <p>คลิกเลือกบทความที่ต้องปรับปรุง ระบบจะพากลับไปหน้า <b>"แก้ไขเนื้อหาและข้อมูล SEO"</b> เพื่อปรับชื่อหรือเนื้อหาใหม่</p>
+      </div>
+    </div>
+    <div class="card banner">
+      <p><b>สรุปภาพรวม:</b> ส่วนสร้างและแก้ไขบทความพร้อมใช้งานในระบบปัจจุบันแล้ว ส่วนการเชื่อมสถิติ Google Search Console และ SERP เป็นขั้นตอนต่อยอดใน Flowchart เพื่อให้วงจร Optimize ครบสมบูรณ์</p>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 09 วงจรติดตามผลและปรับปรุงซ้ำ</span><span>10 / 12</span></div>
+</section>
+
+<!-- SLIDE 11: OPTIMIZE - TOOLS -->
+<section class="slide">
+  <div class="head">
+    <span class="tag">10 · OPTIMIZE บทความ · เครื่องมือในระบบ</span>
+    <h2>เครื่องมือที่ใช้ในการตรวจ แก้ไข และ Optimize บทความ</h2>
+    <p class="sub">รวมทุกอย่างไว้ในหน้าจอเดียว ไม่ต้องสลับไปใช้โปรแกรมอื่น</p>
+  </div>
+  <div class="body">
+    <div class="grid g4">
+      <div class="card">
+        <div class="icon">🩺</div>
+        <h3>1. แผงตรวจสุขภาพ SEO</h3>
+        <p>สรุปปัญหาของหน้าเว็บที่อ่านมาได้ แบ่งสีชัดเจนว่าจุดไหนเป็นปัญหาที่ต้องแก้ หรือจุดไหนควรตรวจสอบเพิ่มเติม</p>
+      </div>
+      <div class="card">
+        <div class="icon">📝</div>
+        <h3>2. ตัวแก้ไขบทความ (Tiptap)</h3>
+        <p>เครื่องมือพิมพ์และจัดหน้าเหมือน Word ปรับหัวข้อใหญ่-ย่อย ตัวหนา ลิสต์ และตารางได้โดยไม่ต้องเขียนโค้ด</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔍</div>
+        <h3>3. แท็บตั้งค่า SEO &amp; โน้ตตรวจทาน</h3>
+        <p>ช่องปรับแก้ชื่อเรื่อง SEO, คำโปรย, ชื่อ URL พร้อมกล่องแสดงคำหลัก-คำประกอบ และคำเตือนจาก AI ให้เช็กข้อมูล</p>
+      </div>
+      <div class="card">
+        <div class="icon">🗂️</div>
+        <h3>4. คลังบทความ &amp; ส่งออกไฟล์</h3>
+        <p>ระบบบันทึกงานลงฐานข้อมูลพร้อมระบบกันการแก้ทับกันข้ามแท็บ และปุ่มดาวน์โหลดไฟล์ Markdown (<code>.md</code>)</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · 10 เครื่องมือ Optimize บทความ</span><span>11 / 12</span></div>
+</section>
+
+<!-- SLIDE 12: RECOMMENDED DEMO -->
+<section class="slide dark">
+  <div class="head">
+    <span class="tag">11 · แนวทางการทำ DEMO ให้คนดูเห็นภาพทันที</span>
+    <h2>ควรโชว์ Demo อะไรบ้าง? (4 ช็อตไฮไลต์)</h2>
+    <p class="sub">เรียงลำดับตามนี้จะช่วยให้ผู้ฟังเข้าใจทั้งฝั่ง Keyword และการ Optimize บทความภายในไม่กี่นาที</p>
+  </div>
+  <div class="body">
+    <div class="grid g2">
+      <div class="card">
+        <h3>🎬 Demo ช็อตที่ 1: นำเข้า Keyword &amp; ดูผลสแกนเว็บเดิม</h3>
+        <ul>
+          <li>โยนไฟล์ CSV คีย์เวิร์ดให้ดูว่าระบบอ่านตารางอัตโนมัติ และติ๊กเลือก <b>1 คำหลัก + 4 คำประกอบ</b></li>
+          <li>เปิดหน้าผลตรวจ SEO ของเว็บเดิม โชว์ให้เห็นว่าระบบจับปัญหาหน้าเว็บ (เช่น ชื่อหน้าว่าง หรือชื่อซ้ำ) ได้จริง</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🎬 Demo ช็อตที่ 2: หน้าแก้ไขและ Optimize 3 มุมมอง</h3>
+        <ul>
+          <li>เปิดบทความที่สร้างเสร็จ โชว์การแก้ข้อความและจัดหัวข้อในแท็บ <b>แก้ไข</b></li>
+          <li>กดสลับไปแท็บ <b>ดูตัวอย่าง</b> และแท็บ <b>ข้อมูล SEO</b> เพื่อแก้ชื่อเรื่องที่จะโชว์บน Google และชี้ให้ดูโน้ตเตือนจาก AI</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🎬 Demo ช็อตที่ 3: บันทึกงานและเปิดต่อจากคลัง</h3>
+        <ul>
+          <li>กดบันทึกและเปลี่ยนสถานะบทความ แล้วออกไปที่หน้าคลังบทความ</li>
+          <li>คลิกเปิดบทความเดิมกลับมาอีกครั้ง เพื่อพิสูจน์ว่าข้อมูลอยู่ครบและไม่เสียโควตาเรียก AI ใหม่</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🎬 Demo ช็อตที่ 4: ส่งออกไฟล์ Markdown ไปใช้งาน</h3>
+        <ul>
+          <li>กดปุ่มดาวน์โหลดไฟล์ <code>.md</code> ออกมาเปิดให้ดู</li>
+          <li>ชี้ให้เห็นว่าได้ทั้งโครงสร้างหัวข้อ เนื้อหา และข้อมูลพร้อมนำไปวางโพสต์บนเว็บไซต์ของธุรกิจได้ทันที</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>SEO Platform · แนวทางการทำ Demo (จบการนำเสนอ)</span><span>12 / 12</span></div>
+</section>
+
+</div>
+
+<div id="nav">
+  <button id="prev" aria-label="ก่อนหน้า">‹</button>
+  <select id="jump" aria-label="เลือกสไลด์"></select>
+  <span id="count">1 / 12</span>
+  <button id="next" aria-label="ถัดไป">›</button>
+</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+const jump=document.getElementById('jump');
+slides.forEach((s,idx)=>{
+  const opt=document.createElement('option');
+  opt.value=idx;
+  const title=s.querySelector('h1,h2')?.textContent?.trim()||`สไลด์ ${idx+1}`;
+  opt.textContent=`${idx+1}. ${title.slice(0,38)}${title.length>38?'…':''}`;
+  jump.appendChild(opt);
+});
+let i=0;
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  document.getElementById('count').textContent=(i+1)+' / '+slides.length;
+  document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+  jump.value=i;
+  history.replaceState(null,'','#'+(i+1));
+}
+function fit(){
+  const s=Math.min(innerWidth/1320,innerHeight/780);
+  document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(i+1)}
+  if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(i-1)}
+  if(e.key==='Home')show(0);
+  if(e.key==='End')show(slides.length-1);
+  if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen?.();
+});
+document.getElementById('next').onclick=()=>show(i+1);
+document.getElementById('prev').onclick=()=>show(i-1);
+jump.onchange=e=>show(Number(e.target.value));
+let tx=null;
+addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+addEventListener('touchend',e=>{
+  if(tx===null)return;
+  const d=e.changedTouches[0].clientX-tx;
+  if(Math.abs(d)>50)show(i+(d<0?1:-1));
+  tx=null;
+});
+fit();
+show((parseInt(location.hash.slice(1))||1)-1);
+</script>
+</body>
+</html>

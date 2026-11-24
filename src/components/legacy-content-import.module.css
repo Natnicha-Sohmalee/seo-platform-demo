@@ -1,0 +1,12 @@
+.panel { margin: 20px 0; padding: 18px 22px; border: 1px solid #dce4ef; border-radius: 12px; background: #fff; color: #203651; font-size: 13px; line-height: 1.8; }
+.panel summary { font-weight: 700; cursor: pointer; }
+.panel p { color: #526782; overflow-wrap: anywhere; }
+.list { max-height: 300px; overflow: auto; margin: 12px 0; }
+.list label { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #edf1f6; }
+.list input { margin-top: 7px; }
+.list small { display: block; color: #6e829e; }
+.panel button { border: 0; border-radius: 8px; background: #285fb4; color: #fff; padding: 10px 16px; cursor: pointer; font: inherit; }
+.panel button:disabled { opacity: .5; cursor: default; }
+.panel button:focus-visible, .panel summary:focus-visible { outline: 3px solid #9fbfeb; outline-offset: 3px; }
+
+.copyOption { display: flex; align-items: center; gap: 8px; margin: 14px 0; }

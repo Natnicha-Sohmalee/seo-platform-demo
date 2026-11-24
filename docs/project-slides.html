@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEO Platform · ภาพรวมโปรเจกต์และแผนงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2a5c; --blue:#2563eb; --sky:#38bdf8; --ice:#e0f2fe; --mist:#f0f7ff;
+  --ink:#1e3a5f; --muted:#5b7290; --white:#fff; --mint:#34d399; --sun:#fbbf24; --rose:#fb7185;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b1e42;font-family:"Prompt",Tahoma,sans-serif;color:var(--ink);overflow:hidden}
+#stage{position:absolute;top:50%;left:50%;width:1280px;height:720px;transform-origin:center;}
+.slide{position:absolute;inset:0;border-radius:28px;overflow:hidden;padding:56px 72px;
+  background:linear-gradient(160deg,#ffffff 0%,var(--mist) 55%,var(--ice) 100%);
+  opacity:0;transform:translateX(40px) scale(.98);transition:all .45s ease;pointer-events:none;}
+.slide.active{opacity:1;transform:none;pointer-events:auto}
+.slide.dark{background:radial-gradient(circle at 20% 20%,#1d4ed8 0%,var(--navy) 60%,#081a3d 100%);color:#fff}
+/* decorative bubbles */
+.slide::before,.slide::after{content:"";position:absolute;border-radius:50%;z-index:0;opacity:.55}
+.slide::before{width:340px;height:340px;right:-110px;top:-120px;background:radial-gradient(circle,#bae6fd,transparent 70%)}
+.slide::after{width:260px;height:260px;left:-90px;bottom:-110px;background:radial-gradient(circle,#c7d2fe,transparent 70%)}
+.slide.dark::before{background:radial-gradient(circle,#38bdf8,transparent 70%);opacity:.35}
+.slide.dark::after{background:radial-gradient(circle,#818cf8,transparent 70%);opacity:.35}
+.slide>*{position:relative;z-index:1}
+.tag{display:inline-block;padding:6px 16px;border-radius:999px;background:var(--ice);color:var(--blue);font-size:15px;font-weight:600;margin-bottom:14px}
+.dark .tag{background:rgba(255,255,255,.15);color:#bae6fd}
+h1{font-size:64px;line-height:1.15;font-weight:700;color:var(--navy)}
+.dark h1{color:#fff}
+h2{font-size:42px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.dark h2{color:#fff}
+.sub{font-size:21px;color:var(--muted);margin-bottom:30px;font-weight:300}
+.dark .sub{color:#cfe3ff}
+.grad{background:linear-gradient(90deg,var(--sky),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.dark .grad{background:linear-gradient(90deg,#7dd3fc,#c7d2fe);-webkit-background-clip:text;background-clip:text}
+.row{display:flex;gap:22px}
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g5{grid-template-columns:repeat(5,1fr)}
+.card{background:#fff;border-radius:22px;padding:24px 22px;box-shadow:0 10px 30px rgba(37,99,235,.10);border:2px solid #e3eefc}
+.card h3{font-size:22px;color:var(--navy);margin:8px 0 6px}
+.card p,.card li{font-size:16.5px;color:var(--muted);line-height:1.6}
+.card ul{padding-left:20px}
+.emoji{font-size:44px;line-height:1}
+.num{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:19px;
+  background:linear-gradient(135deg,var(--sky),var(--blue))}
+.arrow{align-self:center;font-size:34px;color:var(--sky)}
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13.5px;font-weight:600;margin:3px 4px 0 0}
+.ok{background:#d1fae5;color:#047857}.wip{background:#fef3c7;color:#92400e}.todo{background:#ffe4e6;color:#be123c}.info{background:var(--ice);color:var(--blue)}
+.footer{position:absolute;left:72px;bottom:26px;font-size:13px;color:#8aa2c0;z-index:1}
+.dark .footer{color:#9fbbe6}
+/* timeline */
+.timeline{display:flex;gap:14px;margin-top:10px}
+.phase{flex:1;background:#fff;border-radius:20px;padding:18px 16px;border-top:8px solid var(--sky);box-shadow:0 8px 24px rgba(37,99,235,.10)}
+.phase:nth-child(2){border-color:#60a5fa}.phase:nth-child(3){border-color:#3b82f6}.phase:nth-child(4){border-color:#2563eb}.phase:nth-child(5){border-color:#1e40af}
+.phase b{display:block;font-size:24px;color:var(--navy)}
+.phase small{display:block;color:var(--blue);font-weight:600;font-size:14px;margin-bottom:8px}
+.phase ul{padding-left:18px}.phase li{font-size:14.5px;color:var(--muted);line-height:1.55}
+.big-flow{display:flex;align-items:stretch;gap:10px}
+.big-flow .card{flex:1;text-align:center}
+.mascot{font-size:120px;line-height:1;filter:drop-shadow(0 12px 24px rgba(0,0,0,.25))}
+/* nav */
+#nav{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;z-index:9;
+  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);padding:8px 14px;border-radius:999px;color:#dbeafe;font-size:14px}
+#nav button{border:0;background:#fff;color:var(--blue);width:34px;height:34px;border-radius:50%;font-size:17px;cursor:pointer;font-weight:700}
+#bar{position:fixed;top:0;left:0;height:5px;background:linear-gradient(90deg,var(--sky),var(--blue));transition:width .4s;z-index:9}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+td{background:#fff;padding:11px 14px;font-size:16px;color:var(--ink)}
+td:first-child{border-radius:14px 0 0 14px;font-weight:600;color:var(--navy);width:30%}
+td:last-child{border-radius:0 14px 14px 0}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide dark">
+  <div class="row" style="align-items:center;height:100%;gap:40px">
+    <div style="flex:1">
+      <span class="tag">🌊 โปรเจกต์ทีม · Local Pilot</span>
+      <h1>SEO Platform<br><span class="grad">ผู้ช่วยคิด & เขียนบทความ<br>ให้ธุรกิจของคุณ</span></h1>
+      <p class="sub" style="margin-top:22px">จากเว็บไซต์หรือเรื่องเล่าของร้าน → กลายเป็นบทความพร้อมใช้ ✨</p>
+    </div>
+    <div class="mascot">🐳</div>
+  </div>
+  <div class="footer">กด → หรือ Space เพื่อไปสไลด์ถัดไป</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <span class="tag">😵 ปัญหาที่เจอ</span>
+  <h2>เจ้าของธุรกิจอยากมีบทความ แต่…</h2>
+  <p class="sub">อยากให้ลูกค้าค้นเจอใน Google และ AI แต่เริ่มไม่ถูก</p>
+  <div class="grid g3">
+    <div class="card"><div class="emoji">🤔</div><h3>ไม่รู้จะเขียนอะไร</h3><p>คิดหัวข้อไม่ออก ไม่รู้ลูกค้าค้นหาคำไหน</p></div>
+    <div class="card"><div class="emoji">⏰</div><h3>ไม่มีเวลา</h3><p>ต้องดูแลร้านทั้งวัน การวางโครงและเขียนเองใช้เวลานาน</p></div>
+    <div class="card"><div class="emoji">😟</div><h3>กลัวข้อมูลผิด</h3><p>ใช้ AI เขียนเองแล้วกลัวมันแต่งตัวเลขหรือรีวิวขึ้นมาเอง</p></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <span class="tag">💡 ทางออก</span>
+  <h2>ทำครบจบในที่เดียว 4 ขั้นตอน</h2>
+  <p class="sub">ไม่ต้องเริ่มจากหน้ากระดาษเปล่า</p>
+  <div class="big-flow">
+    <div class="card"><div class="emoji">📥</div><h3>1. เก็บข้อมูล</h3><p>อ่านเว็บไซต์ หรือเล่าเรื่องธุรกิจ + นำเข้าคีย์เวิร์ด CSV</p></div>
+    <div class="arrow">➜</div>
+    <div class="card"><div class="emoji">🎯</div><h3>2. เลือกหัวข้อ</h3><p>AI แนะนำ 3 หัวข้อ หรือพิมพ์เรื่องที่อยากเขียนเอง</p></div>
+    <div class="arrow">➜</div>
+    <div class="card"><div class="emoji">🗺️</div><h3>3. วางแผน</h3><p>AI ทำแผนบทความ 9 ข้อ ให้ตรวจก่อนเขียน</p></div>
+    <div class="arrow">➜</div>
+    <div class="card"><div class="emoji">✍️</div><h3>4. เขียน & ส่งออก</h3><p>ได้ฉบับร่าง แก้ได้แบบ Word แล้วดาวน์โหลด .md</p></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <span class="tag">🛣️ เส้นทางการใช้งาน</span>
+  <h2>มีเว็บก็ได้ ไม่มีเว็บก็ทำได้</h2>
+  <p class="sub">ทุกงานอยู่ภายใต้ "โปรเจกต์" เดียวกัน</p>
+  <div class="grid g3">
+    <div class="card" style="border-color:#bae6fd"><div class="emoji">🌐</div><h3>มีเว็บไซต์</h3>
+      <ul><li>สร้างโปรเจกต์ + ใส่ URL</li><li>สั่งอ่านเว็บ (สูงสุด 10 หน้า)</li><li>ดูผลตรวจ SEO เบื้องต้น</li><li>เลือกหน้ามาใช้วางแผน</li></ul></div>
+    <div class="card" style="border-color:#c7d2fe"><div class="emoji">🏪</div><h3>ยังไม่มีเว็บไซต์</h3>
+      <ul><li>พิมพ์เล่าว่าขายอะไร</li><li>ลูกค้าคือใคร จุดเด่นคืออะไร</li><li>AI ใช้ข้อมูลนี้แทนเว็บ</li><li>ไม่ค้นเว็บเพิ่มเอง</li></ul></div>
+    <div class="card" style="border-color:#a5f3fc"><div class="emoji">📊</div><h3>มีไฟล์คีย์เวิร์ด</h3>
+      <ul><li>อัปโหลด CSV จาก Keyword Planner</li><li>เลือก 1 คำหลัก + 4 คำประกอบ</li><li>ส่งต่อให้ AI ใช้อย่างเป็นธรรมชาติ</li><li>ไม่เรียก AI ตอนนำเข้า</li></ul></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <span class="tag">⚙️ เบื้องหลังระบบ</span>
+  <h2>เหมือนร้านที่มีพนักงาน 3 คน + ผู้ช่วย AI</h2>
+  <p class="sub">แต่ละส่วนทำหน้าที่ของตัวเอง แล้วส่งงานต่อกัน</p>
+  <div class="grid g4">
+    <div class="card"><div class="emoji">🧑‍💼</div><h3>พนักงานหน้าร้าน</h3><p><b>Next.js</b><br>หน้าเว็บที่เราคลิกใช้ ล็อกอิน แก้บทความ</p></div>
+    <div class="card"><div class="emoji">🏃</div><h3>พนักงานเดินเอกสาร</h3><p><b>Python Worker</b><br>ออกไปอ่านเว็บทีละหน้า แปลงเป็นข้อความสะอาด</p></div>
+    <div class="card"><div class="emoji">🗄️</div><h3>ตู้เก็บเอกสาร</h3><p><b>Supabase</b><br>จำบัญชี โปรเจกต์ แผน และบทความ ไม่หายเมื่อปิดเครื่อง</p></div>
+    <div class="card"><div class="emoji">🤖</div><h3>ผู้ช่วยนักเขียน</h3><p><b>Typhoon / Gemini</b><br>คิดหัวข้อ วางแผน เขียนร่าง ตามกฎห้ามแต่งข้อมูล</p></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <span class="tag">✅ ตอนนี้ทำอะไรได้แล้ว</span>
+  <h2>สถานะโค้ดปัจจุบัน (MVP)</h2>
+  <p class="sub">โครงหลักครบแล้ว เหลือปรับให้พร้อมใช้งานจริงกับลูกค้า</p>
+  <div class="grid g2">
+    <div class="card"><h3>🟢 ใช้งานได้แล้ว</h3>
+      <span class="pill ok">ล็อกอิน / สมัคร / ลืมรหัส</span><span class="pill ok">สร้างโปรเจกต์</span>
+      <span class="pill ok">อ่านเว็บ + ประวัติงาน</span><span class="pill ok">ตรวจ SEO เบื้องต้น</span>
+      <span class="pill ok">นำเข้าคีย์เวิร์ด CSV</span><span class="pill ok">AI แนะนำหัวข้อ / แผน / บทความ</span>
+      <span class="pill ok">ตัวแก้ไขบทความ</span><span class="pill ok">บันทึกอัตโนมัติ</span><span class="pill ok">ดาวน์โหลด .md</span>
+    </div>
+    <div class="card"><h3>🟡 ยังต้องทำเพิ่ม</h3>
+      <span class="pill wip">โปรเจกต์แบบไม่มีเว็บ</span><span class="pill wip">ผูกงานทุกชิ้นกับโปรเจกต์</span>
+      <span class="pill todo">ไฟล์สร้างฐานข้อมูล + สิทธิ์ (RLS)</span><span class="pill todo">ขอความยินยอมก่อนส่งให้ AI</span>
+      <span class="pill todo">จำกัดโควตา AI</span><span class="pill wip">กู้งานค้างหลังรีสตาร์ต</span>
+      <span class="pill todo">ชุดติดตั้ง WSL + Docker</span><span class="pill wip">แก้ / ลบโปรเจกต์</span>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide dark">
+  <span class="tag">🎯 เป้าหมายรอบนี้</span>
+  <h2>Local Pilot ภายใน 2 สัปดาห์</h2>
+  <p class="sub">ให้ลูกค้าจริง 1 ธุรกิจ ทดลองใช้เองทุกขั้นตอนบนเครื่องของเขา</p>
+  <div class="grid g3">
+    <div class="card"><div class="emoji">💻</div><h3>ติดตั้งในเครื่องลูกค้า</h3><p>Windows + WSL + Docker ข้อมูลอยู่ในเครื่องลูกค้า</p></div>
+    <div class="card"><div class="emoji">🛡️</div><h3>ปลอดภัย & คุมค่าใช้จ่าย</h3><p>ขอยินยอมก่อนส่งข้อมูลให้ AI · เพดาน 20 ครั้ง/วัน · 100 ครั้งตลอด pilot</p></div>
+    <div class="card"><div class="emoji">📄</div><h3>ได้บทความใช้จริง</h3><p>แก้ บันทึก เปิดต่อหลังรีสตาร์ต และส่งออก Markdown ไปโพสต์เอง</p></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <span class="tag">👥 วิธีแบ่งงาน</span>
+  <h2>ผู้พัฒนา 3 คน ทำได้ทุกฝั่ง</h2>
+  <p class="sub">เลือกเจ้าของงานแต่ละชิ้นตอนเริ่ม sprint · แยก PR ตามงาน · แยกไฟล์ให้ทำพร้อมกันได้</p>
+  <div class="grid g4">
+    <div class="card"><div class="emoji">🗄️</div><h3>กลุ่ม DB</h3><p><b>DB1</b> ตั้ง Supabase local<br><b>DB2</b> Migration ตาราง + RLS</p></div>
+    <div class="card"><div class="emoji">🖥️</div><h3>กลุ่ม UI</h3><p><b>UI1</b> โปรเจกต์ไม่บังคับเว็บไซต์<br><b>UI2</b> นำทางในโปรเจกต์</p></div>
+    <div class="card"><div class="emoji">🤖</div><h3>กลุ่ม AI</h3><p><b>AI1</b> แจ้งการส่งข้อมูลไป AI<br><b>AI2</b> เพดานการเรียก AI<br><b>AI3</b> สอง provider profile</p></div>
+    <div class="card"><div class="emoji">🏃</div><h3>กลุ่ม WK / OPS</h3><p><b>WK1</b> Worker ต่อ DB local<br><b>OPS1</b> เปิด/ปิดระบบบน WSL</p></div>
+  </div>
+  <p class="sub" style="margin-top:22px;font-size:17px">🤝 คนที่รอ dependency ช่วย review หรือรับงานในไฟล์คนละส่วน · ผู้รวมระบบหมุนเวียนกันได้</p>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <span class="tag">🗓️ แผนงาน 10 วัน</span>
+  <h2>ตกลงร่วมกัน → แยกทำ → เชื่อม → ตรวจรับ</h2>
+  <p class="sub">ตามแผนใน docs/pilot-task-list.md · กันวันท้ายไว้แก้สิ่งที่พบจากการใช้งานจริง</p>
+  <div class="timeline">
+    <div class="phase"><small>วัน 1</small><b>ตกลง interface</b><ul><li><b>C0</b> สัญญาข้อมูลและ process</li><li>schema 5 ตาราง + project_id</li><li>website_url nullable</li><li>fixture มี/ไม่มีเว็บ</li></ul></div>
+    <div class="phase"><small>วัน 1–6</small><b>แยกทำคู่ขนาน</b><ul><li>DB1 · DB2</li><li>UI1 · UI2</li><li>WK1 · OPS1</li><li>AI1 · AI2 · AI3</li></ul></div>
+    <div class="phase"><small>วัน 5–8</small><b>เชื่อมชิ้นงาน</b><ul><li><b>DATA1</b> ผูกคีย์เวิร์ด/แผนกับโปรเจกต์</li><li><b>DATA2</b> ผูกบทความกับโปรเจกต์</li><li><b>WK2</b> กู้งานหลัง restart</li><li><b>OPS2</b> bootstrap เครื่อง</li></ul></div>
+    <div class="phase"><small>วัน 8–10</small><b>ตรวจรับเครื่องลูกค้า</b><ul><li><b>V1</b> เส้นทางมีเว็บ</li><li><b>V2</b> ไม่มีเว็บ + CSV</li><li><b>V3</b> ข้อจำกัด/ความผิดพลาด</li><li><b>V4</b> ส่งมอบ</li></ul></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <span class="tag">🔧 จุดที่ต้องโฟกัส</span>
+  <h2>งานหลักที่ต้องทำต่อ</h2>
+  <p class="sub">จากการเทียบแผนกับโค้ดที่มีอยู่จริง</p>
+  <table>
+    <tr><td>🗄️ ฐานข้อมูล</td><td>ยังไม่มีไฟล์สร้างตารางใน repo → ทำ Migration + RLS + ตาราง AI usage / consent</td></tr>
+    <tr><td>📁 โปรเจกต์เป็นศูนย์กลาง</td><td>เว็บไซต์เป็นทางเลือก · คีย์เวิร์ด แผน บทความ ผูกกับ project_id จริง</td></tr>
+    <tr><td>🏃 Worker</td><td>รองรับฐานข้อมูลในเครื่อง (http loopback) · แสดงงานค้างหลังรีสตาร์ต</td></tr>
+    <tr><td>🤖 AI</td><td>หน้าจอขอยินยอม · จองโควตาก่อนเรียก · ทดสอบทั้ง Typhoon และ Gemini</td></tr>
+    <tr><td>📦 ติดตั้ง</td><td>สคริปต์เปิด/ปิด/ตรวจสถานะบน WSL + Docker · คู่มือส่งมอบลูกค้า</td></tr>
+  </table>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <span class="tag">🏁 เกณฑ์ส่งมอบ</span>
+  <h2>ถือว่าเสร็จเมื่อ…</h2>
+  <p class="sub">ตามเอกสาร docs/pilot-system-design.md</p>
+  <div class="grid g3">
+    <div class="card"><div class="emoji">📦</div><h3>ติดตั้งจาก clone ใหม่ได้</h3><p>ทำตามคู่มือบนเครื่องเป้าหมาย ไม่ต้องเดา schema หรือ URL</p></div>
+    <div class="card"><div class="emoji">🙋</div><h3>ลูกค้าใช้เองได้</h3><p>ทำได้ทั้ง 2 เส้นทาง และเปิดงานเดิมหลัง restart โดยไม่เรียก AI เอง</p></div>
+    <div class="card"><div class="emoji">🛡️</div><h3>AI ปลอดภัย</h3><p>ไม่ส่ง prompt ก่อนยินยอม · ครบเพดานแล้วไม่มี request ไป provider</p></div>
+    <div class="card"><div class="emoji">🧪</div><h3>ทดสอบ AI ทั้ง 2 แบบ</h3><p>Gemini และ Typhoon ใน dev · หน้าจอแสดงชื่อ provider ก่อนส่ง</p></div>
+    <div class="card"><div class="emoji">🔒</div><h3>สิทธิ์ข้ามบัญชี</h3><p>บัญชีอื่นอ่าน/แก้โปรเจกต์และงานของลูกค้าไม่ได้ (RLS)</p></div>
+    <div class="card"><div class="emoji">🚧</div><h3>เจอปัญหาก็ไปต่อได้</h3><p>Worker ไม่พร้อม · AI 429/timeout · URL ถูกปฏิเสธ · งานค้างหลัง restart</p></div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <span class="tag">🚀 หลังจบ Pilot</span>
+  <h2>ก่อนเปิดบริการจริงต้องเพิ่ม</h2>
+  <p class="sub">รอบ pilot ยังไม่ทำ เพราะใช้ข้อมูลทดลองที่เริ่มใหม่ได้</p>
+  <div class="grid g4">
+    <div class="card"><div class="emoji">💾</div><h3>สำรอง & กู้คืน</h3><p>backup / restore ที่ผ่านการทดสอบแล้ว</p></div>
+    <div class="card"><div class="emoji">📬</div><h3>คิวงานถาวร</h3><p>จากเดิม Worker รับได้ทีละ 1 งาน และไม่ทำต่อหลังรีสตาร์ต</p></div>
+    <div class="card"><div class="emoji">☁️</div><h3>Deployment & Monitoring</h3><p>ไม่พึ่งเครื่องลูกค้า มีระบบเฝ้าดูและจัดการบัญชี</p></div>
+    <div class="card"><div class="emoji">📜</div><h3>นโยบายข้อมูล</h3><p>สิทธิ์ข้อมูล การจำกัดการใช้ และค่าใช้จ่าย AI</p></div>
+  </div>
+  <p class="sub" style="margin-top:24px;font-size:17px">🔌 นอกขอบเขต pilot: เชื่อม WordPress / CMS และขั้นอนุมัติบทความในระบบ — ลูกค้านำ Markdown ไปเผยแพร่เอง</p>
+</section>
+
+<!-- 13 -->
+<section class="slide dark">
+  <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div class="mascot">🐳💙</div>
+    <h1 style="margin-top:24px">ขอบคุณครับ / ค่ะ</h1>
+    <p class="sub" style="margin-top:14px">SEO Platform · ช่วยให้ธุรกิจเล็ก ๆ มีบทความดี ๆ ได้ง่ายขึ้น</p>
+    <span class="tag">💬 ถาม–ตอบ</span>
+  </div>
+</section>
+
+</div>
+
+<div id="nav"><button id="prev" aria-label="ก่อนหน้า">‹</button><span id="count">1 / 13</span><button id="next" aria-label="ถัดไป">›</button></div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  document.getElementById('count').textContent=(i+1)+' / '+slides.length;
+  document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+  history.replaceState(null,'','#'+(i+1));
+}
+function fit(){
+  const s=Math.min(innerWidth/1320,innerHeight/790);
+  document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(i+1)}
+  if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(i-1)}
+  if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+  if(e.key==='f')document.documentElement.requestFullscreen?.();
+});
+document.getElementById('next').onclick=()=>show(i+1);
+document.getElementById('prev').onclick=()=>show(i-1);
+let tx=null;
+addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+addEventListener('touchend',e=>{if(tx===null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)show(i+(d<0?1:-1));tx=null});
+fit(); show((parseInt(location.hash.slice(1))||1)-1);
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+.assistant {
+  padding-top: 8px;
+  color: var(--ink);
+  font-family: "IBM Plex Sans Thai", sans-serif;
+  line-height: 1.8;
+}
+.assistant > h3 {
+  margin: 0 0 9px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.controls {
+  border: 0;
+  padding: 0;
+  margin: 20px 0 0;
+  min-width: 0;
+}
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.controls small {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.controls input,
+.controls textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1px solid #ced9d5;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+.controls input:focus,
+.controls textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px #0c6b5814;
+}
+.controls input::placeholder,
+.controls textarea::placeholder {
+  color: #8c9c98;
+  font-size: 12px;
+}
+.controls textarea {
+  resize: vertical;
+}
+.controls details,
+.result > details {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8faf9;
+  font-size: 12px;
+}
+.controls summary,
+.result > details summary {
+  cursor: pointer;
+  color: var(--green);
+  font-weight: 600;
+}
+.controls details > p {
+  font-size: 12px;
+}
+.controls details[open] {
+  background: #fbfcfa;
+}
+.controls button,
+.result > button {
+  padding: 11px 18px;
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  background: var(--green);
+  color: white;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.controls button:hover,
+.result > button:hover {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+}
+.controls button:disabled,
+.controls:disabled button {
+  opacity: 0.45;
+  cursor: default;
+}
+.controls button:focus-visible,
+.result > button:focus-visible,
+.controls summary:focus-visible {
+  outline: 3px solid #9ee4cd;
+  outline-offset: 3px;
+}
+.source {
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 10px !important;
+  font-weight: 400 !important;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.source input {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+}
+.source span {
+  min-width: 0;
+}
+.topics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+.card h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink);
+  font-weight: 700;
+}
+.card p {
+  margin: 0 0 13px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.card button {
+  margin-top: auto;
+}
+.selected {
+  border: 2px solid var(--green);
+  background: #f5fbf8;
+}
+.plan,
+.result {
+  margin-top: 26px;
+  padding-top: 23px;
+  border-top: 1px solid var(--line);
+}
+.plan > h4,
+.result > h4 {
+  margin: 0 0 14px;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.7;
+  font-weight: 700;
+}
+.plan > details {
+  margin: 18px 0;
+}
+.result > details li {
+  margin: 8px 0;
+  color: var(--muted);
+}
+.result > details small {
+  display: block;
+  color: #7c8d89;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.result > details ol {
+  padding-left: 20px;
+}
+.briefDetails pre {
+  padding: 18px;
+  margin-top: 14px;
+  background: #f5f8f6;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 500px;
+  overflow: auto;
+  font-family: "IBM Plex Sans Thai", sans-serif;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink);
+}
+.reviewNotice {
+  margin: 16px 0;
+  padding: 15px 17px;
+  border: 1px solid #efd79b;
+  border-radius: 10px;
+  background: #fff9ed;
+  color: #7f5a1f;
+  font-size: 12px;
+}
+.reviewNotice ul {
+  padding-left: 19px;
+  margin-bottom: 0;
+}
+.reviewNotice li {
+  margin: 7px 0;
+}
+@media (max-width: 600px) {
+  .topics {
+    grid-template-columns: 1fr;
+  }
+  .controls details,
+  .result > details {
+    padding: 12px;
+  }
+  .assistant > h3 {
+    font-size: 18px;
+  }
+}
