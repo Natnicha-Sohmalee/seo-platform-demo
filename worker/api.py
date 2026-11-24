@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field, HttpUrl
 
-from crawler_engine import crawl_site, public_fetch, browser_fetch
+from crawler_engine import BrowserSession, crawl_site, public_fetch
 
 from uuid import UUID
 from supabase_store import (
@@ -87,14 +87,25 @@ def execute_job(job_id: str, request: CrawlRequest):
                     current_url=current_url,
                 )
 
-        result = crawl_site(
-            seed=str(request.url),
-            max_pages=request.max_pages,
-            max_depth=request.max_depth,
-            scope="page",
-            fetcher=browser_fetch if request.render_js else public_fetch,
-            on_update=on_update,
-        )
+        if request.render_js:
+            with BrowserSession() as browser_session:
+                result = crawl_site(
+                    seed=str(request.url),
+                    max_pages=request.max_pages,
+                    max_depth=request.max_depth,
+                    scope="page",
+                    fetcher=browser_session.fetch,
+                    on_update=on_update,
+                )
+        else:
+            result = crawl_site(
+                seed=str(request.url),
+                max_pages=request.max_pages,
+                max_depth=request.max_depth,
+                scope="page",
+                fetcher=public_fetch,
+                on_update=on_update,
+            )
 
         summary = {
             "succeeded": result.get("succeeded", 0),

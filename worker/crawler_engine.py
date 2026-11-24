@@ -465,56 +465,106 @@ from urllib.error import HTTPError
 # Core included above
 
 
+def _launch_browser(runtime):
+    try:
+        return runtime.chromium.launch(channel='msedge', headless=True)
+    except Exception:
+        return runtime.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-dev-shm-usage'],
+        )
+
+
+def _render_with_browser(browser, url, validator, browser_timeout_cls):
+    validator(url)
+    origin = urlparse(url).netloc
+    context = browser.new_context(
+        user_agent=AGENT,
+        service_workers='block',
+        accept_downloads=False,
+    )
+    try:
+        def guard(route):
+            request = route.request
+            try:
+                if request.resource_type in ('image', 'media', 'font'):
+                    return route.abort()
+                validator(request.url)
+                if request.is_navigation_request() and urlparse(request.url).netloc != origin:
+                    return route.abort()
+                return route.continue_()
+            except (ValueError, OSError):
+                return route.abort()
+
+        context.route('**/*', guard)
+        page = context.new_page()
+        response = page.goto(url, wait_until='domcontentloaded', timeout=25000)
+        try:
+            page.wait_for_load_state('networkidle', timeout=3000)
+        except browser_timeout_cls:
+            pass
+        if not response:
+            raise ValueError('เบราว์เซอร์ไม่ได้รับหน้าเว็บ')
+        if response.status >= 400:
+            raise HTTPError(url, response.status, 'Browser HTTP error', {}, None)
+        if urlparse(page.url).netloc != origin:
+            raise ValueError('เว็บเปลี่ยนโดเมน กรุณาใช้ URL ปลายทางโดยตรง')
+        kind = response.headers.get('content-type', '').split(';')[0]
+        data = page.content().encode('utf-8')
+        if len(data) > MAX_BYTES:
+            raise ValueError('rendered_response_too_large')
+        return data, response.status, page.url, kind
+    except HTTPError:
+        raise
+    except Exception as exc:
+        raise ValueError('โหมด JavaScript อ่านไม่สำเร็จ: ' + str(exc).splitlines()[0][:220]) from exc
+    finally:
+        context.close()
+
+
+class BrowserSession:
+    """เปิด Chromium/Edge เพียงครั้งเดียวตลอดงาน Crawl เพื่อลดเวลาเปิด-ปิดเบราว์เซอร์ทุกหน้า"""
+
+    def __init__(self):
+        self._cm = None
+        self._runtime = None
+        self._browser = None
+        self._timeout_cls = Exception
+
+    def __enter__(self):
+        try:
+            from playwright.sync_api import sync_playwright, TimeoutError as BrowserTimeout
+        except ImportError as exc:
+            raise ValueError('โหมด JavaScript ต้องติดตั้งก่อนด้วย python -m pip install playwright') from exc
+        self._timeout_cls = BrowserTimeout
+        self._cm = sync_playwright()
+        self._runtime = self._cm.__enter__()
+        self._browser = _launch_browser(self._runtime)
+        return self
+
+    def fetch(self, url):
+        if urlparse(url).path == '/robots.txt':
+            return public_fetch(url)
+        return _render_with_browser(self._browser, url, validate_public_url, self._timeout_cls)
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if self._browser is not None:
+                self._browser.close()
+        finally:
+            if self._cm is not None:
+                self._cm.__exit__(exc_type, exc, tb)
+
+
 def render_html(url, validator):
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as BrowserTimeout
     except ImportError as exc:
         raise ValueError('โหมด JavaScript ต้องติดตั้งก่อนด้วย python -m pip install playwright') from exc
-    validator(url)
-    origin = urlparse(url).netloc
     with sync_playwright() as runtime:
+        browser = _launch_browser(runtime)
         try:
-            browser = runtime.chromium.launch(channel='msedge', headless=True)
-        except Exception:
-            browser = runtime.chromium.launch(
-                headless=True,
-                args=['--no-sandbox', '--disable-dev-shm-usage'],
-            )
-        try:
-            context = browser.new_context(user_agent=AGENT, service_workers='block', accept_downloads=False)
-            def guard(route):
-                request = route.request
-                try:
-                    if request.resource_type in ('image', 'media', 'font'):
-                        return route.abort()
-                    validator(request.url)
-                    if request.is_navigation_request() and urlparse(request.url).netloc != origin:
-                        return route.abort()
-                    return route.continue_()
-                except (ValueError, OSError):
-                    return route.abort()
-            context.route('**/*', guard)
-            page = context.new_page()
-            response = page.goto(url, wait_until='domcontentloaded', timeout=25000)
-            try:
-                page.wait_for_load_state('networkidle', timeout=10000)
-            except BrowserTimeout:
-                pass
-            if not response:
-                raise ValueError('เบราว์เซอร์ไม่ได้รับหน้าเว็บ')
-            if response.status >= 400:
-                raise HTTPError(url, response.status, 'Browser HTTP error', {}, None)
-            if urlparse(page.url).netloc != origin:
-                raise ValueError('เว็บเปลี่ยนโดเมน กรุณาใช้ URL ปลายทางโดยตรง')
-            kind = response.headers.get('content-type', '').split(';')[0]
-            data = page.content().encode('utf-8')
-            if len(data) > MAX_BYTES:
-                raise ValueError('rendered_response_too_large')
-            return data, response.status, page.url, kind
-        except HTTPError:
-            raise
-        except Exception as exc:
-            raise ValueError('โหมด JavaScript อ่านไม่สำเร็จ: ' + str(exc).splitlines()[0][:220]) from exc
+            return _render_with_browser(browser, url, validator, BrowserTimeout)
         finally:
             browser.close()
 
