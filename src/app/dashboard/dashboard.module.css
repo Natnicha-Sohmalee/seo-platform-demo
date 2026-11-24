@@ -77,20 +77,20 @@
 }
 
 .iconSpeed {
-  color: #9a661f;
-  background: #fff2dc;
+  color: #b45309;
+  background: #fffbeb;
 }
 .iconIssue {
-  color: var(--red);
-  background: #fbe8e5;
+  color: #dc2626;
+  background: #fef2f2;
 }
 .iconCrawl {
-  color: var(--green);
-  background: var(--mint);
+  color: #4f46e5;
+  background: #eef2ff;
 }
 .iconContent {
-  color: #25607f;
-  background: #e6f0f6;
+  color: #059669;
+  background: #ecfdf5;
 }
 
 .kpiCard > div:last-child {
@@ -275,19 +275,19 @@
 }
 
 .gauge_green {
-  --gauge-color: #2c9675;
-  color: var(--green);
+  --gauge-color: #059669;
+  color: #047857;
 }
 .gauge_amber {
-  --gauge-color: #e2a14a;
-  color: #9a661f;
+  --gauge-color: #f59e0b;
+  color: #b45309;
 }
 .gauge_red {
-  --gauge-color: #d16c61;
-  color: var(--red);
+  --gauge-color: #ef4444;
+  color: #dc2626;
 }
 .gauge_gray {
-  --gauge-color: #b7c2be;
+  --gauge-color: #cbd5e1;
   color: var(--muted);
 }
 

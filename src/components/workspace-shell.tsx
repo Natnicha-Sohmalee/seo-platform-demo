@@ -23,6 +23,8 @@ const routeTitles: Record<WorkspaceRoute, string> = {
   "/articles": "คลังบทความ",
 };
 
+const SIDEBAR_PREF_KEY = "seo-platform:sidebar-collapsed";
+
 export default function WorkspaceShell({
   activeRoute,
   breadcrumb,
@@ -33,7 +35,18 @@ export default function WorkspaceShell({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(SIDEBAR_PREF_KEY) === "1") {
+        setCollapsed(true);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -61,11 +74,23 @@ export default function WorkspaceShell({
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  function toggleCollapse() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_PREF_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
+
   const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "บัญชี";
   const displayName = userEmail ?? "บัญชีของคุณ";
 
   return (
-    <div className="workspace" lang="th">
+    <div className={`workspace ${collapsed ? "ws-collapsed" : ""}`} lang="th">
       <a href="#ws-main-content" className="skip-link">
         ข้ามไปยังเนื้อหาหลัก
       </a>
@@ -80,13 +105,41 @@ export default function WorkspaceShell({
 
       <aside
         id="ws-sidebar-nav"
-        className={open ? "ws-sidebar open" : "ws-sidebar"}
+        className={`ws-sidebar ${open ? "open" : ""} ${collapsed ? "collapsed" : ""}`}
         aria-label="แถบนำทางหลัก"
       >
         <div className="ws-logo">
-          <Link href="/" onClick={() => setOpen(false)}>
-            <Logo inverse />
+          <Link href="/" onClick={() => setOpen(false)} title="SEO Platform">
+            {collapsed ? (
+              <span className="logo-mark">
+                <Icon name="chart" size={18} />
+              </span>
+            ) : (
+              <Logo />
+            )}
           </Link>
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            aria-label={collapsed ? "ขยายแถบเมนู" : "พับแถบเมนู"}
+            title={collapsed ? "ขยายแถบเมนู" : "พับแถบเมนู"}
+            onClick={toggleCollapse}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+              aria-hidden="true"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
           <button
             type="button"
             className="sidebar-close"
@@ -95,6 +148,18 @@ export default function WorkspaceShell({
           >
             <Icon name="close" />
           </button>
+        </div>
+
+        <div className="ws-quick-wrap">
+          <Link
+            href="/content"
+            className="btn btn-primary ws-quick-cta"
+            title="สร้างบทความใหม่"
+            onClick={() => setOpen(false)}
+          >
+            <Icon name="plus" size={17} />
+            {!collapsed && <span>สร้างบทความใหม่</span>}
+          </Link>
         </div>
 
         <nav aria-label="เมนูพื้นที่ทำงาน">
@@ -106,33 +171,42 @@ export default function WorkspaceShell({
                 href={item.href}
                 className={isCurrent ? "active" : ""}
                 aria-current={isCurrent ? "page" : undefined}
+                title={collapsed ? item.label : undefined}
                 onClick={() => setOpen(false)}
               >
-                <Icon name={item.icon} />
-                <span>{item.label}</span>
-                {isCurrent && <i aria-hidden="true" />}
+                <Icon name={item.icon} size={19} />
+                {!collapsed && <span>{item.label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        <div className="workspace-usage">
-          <div>
-            <span>พื้นที่ทำงานของคุณ</span>
-            <b>พร้อมใช้งาน</b>
+        {!collapsed && (
+          <div className="workspace-usage">
+            <div>
+              <span>สถานะพื้นที่ทำงาน</span>
+              <b>พร้อมใช้งาน</b>
+            </div>
+            <div className="usage-bar" aria-hidden="true">
+              <i />
+            </div>
+            <small>เปิดงานเดิมได้โดยไม่เรียก AI ซ้ำ</small>
           </div>
-          <div className="usage-bar" aria-hidden="true">
-            <i />
-          </div>
-          <small>การเปิดงานเดิมไม่เรียก AI ซ้ำ</small>
-        </div>
+        )}
 
-        <Link href="/login" className="ws-user" onClick={() => setOpen(false)}>
+        <Link
+          href="/login"
+          className="ws-user"
+          title={displayName}
+          onClick={() => setOpen(false)}
+        >
           <span aria-hidden="true">{initials}</span>
-          <div>
-            <b>{displayName}</b>
-            <small>{userEmail ? "จัดการบัญชี" : "เข้าสู่ระบบ"}</small>
-          </div>
+          {!collapsed && (
+            <div>
+              <b>{displayName}</b>
+              <small>{userEmail ? "จัดการบัญชี" : "เข้าสู่ระบบ"}</small>
+            </div>
+          )}
         </Link>
       </aside>
 
@@ -149,7 +223,8 @@ export default function WorkspaceShell({
             <Icon name="menu" />
           </button>
           <div className="ws-breadcrumb">
-            <small>พื้นที่ทำงาน /</small>
+            <small>พื้นที่ทำงาน</small>
+            <span className="ws-sep" aria-hidden="true">/</span>
             <b>{breadcrumb ?? routeTitles[activeRoute]}</b>
           </div>
           <div className="ws-head-actions">
