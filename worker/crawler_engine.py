@@ -473,7 +473,13 @@ def render_html(url, validator):
     validator(url)
     origin = urlparse(url).netloc
     with sync_playwright() as runtime:
-        browser = runtime.chromium.launch(channel='msedge', headless=True)
+        try:
+            browser = runtime.chromium.launch(channel='msedge', headless=True)
+        except Exception:
+            browser = runtime.chromium.launch(
+                headless=True,
+                args=['--no-sandbox', '--disable-dev-shm-usage'],
+            )
         try:
             context = browser.new_context(user_agent=AGENT, service_workers='block', accept_downloads=False)
             def guard(route):
