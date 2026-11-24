@@ -51,11 +51,27 @@ export default function DashboardPage() {
     rows: [],
   });
 
-  // PageSpeed state (cached per project + strategy)
+  // PageSpeed state (cached per project + strategy, persisted in localStorage)
   const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
   const [psiCache, setPsiCache] = useState<Record<string, PageSpeedReport>>({});
   const [psiLoading, setPsiLoading] = useState(false);
   const [psiError, setPsiError] = useState("");
+  const [psiErrorHint, setPsiErrorHint] = useState("");
+
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      const raw = window.localStorage.getItem(`seo-platform:psi-cache:${userId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, PageSpeedReport>;
+        if (parsed && typeof parsed === "object") {
+          setPsiCache(parsed);
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [userId]);
 
   // Load projects, articles, briefs, keywords
   useEffect(() => {
@@ -203,31 +219,47 @@ export default function DashboardPage() {
   const mobilePsi = activeProject ? psiCache[`${activeProject.id}:mobile`] ?? null : null;
 
   const runPageSpeed = useCallback(
-    async (targetStrategy: "mobile" | "desktop" = device) => {
+    async (targetStrategy: "mobile" | "desktop" = device, force = false) => {
       if (!activeProject || psiLoading) return;
       setPsiLoading(true);
       setPsiError("");
+      setPsiErrorHint("");
       try {
         const res = await fetch("/api/pagespeed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: activeProject.websiteUrl, strategy: targetStrategy }),
+          body: JSON.stringify({
+            url: activeProject.websiteUrl,
+            strategy: targetStrategy,
+            force,
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
+          if (typeof data?.hint === "string") setPsiErrorHint(data.hint);
           throw new Error(typeof data?.error === "string" ? data.error : "ตรวจ PageSpeed ไม่สำเร็จ");
         }
-        setPsiCache((prev) => ({
-          ...prev,
-          [`${activeProject.id}:${targetStrategy}`]: data as PageSpeedReport,
-        }));
+        setPsiCache((prev) => {
+          const next = {
+            ...prev,
+            [`${activeProject.id}:${targetStrategy}`]: data as PageSpeedReport,
+          };
+          if (userId) {
+            try {
+              window.localStorage.setItem(`seo-platform:psi-cache:${userId}`, JSON.stringify(next));
+            } catch {
+              // ignore storage quota errors
+            }
+          }
+          return next;
+        });
       } catch (err) {
         setPsiError(err instanceof Error ? err.message : "ตรวจ PageSpeed ไม่สำเร็จ");
       } finally {
         setPsiLoading(false);
       }
     },
-    [activeProject, device, psiLoading]
+    [activeProject, device, psiLoading, userId]
   );
 
   // One-click CSV report export (Requirement 2.3.4 & 3.7)
@@ -485,16 +517,31 @@ export default function DashboardPage() {
             tone="error"
             title="ตรวจ PageSpeed ไม่สำเร็จ"
             detail={psiError}
-            nextStep="ตรวจว่า URL เว็บไซต์เปิดเป็นสาธารณะ หรือรอสักครู่แล้วกดลองตรวจอีกครั้ง"
+            nextStep={
+              psiErrorHint ||
+              "ตรวจว่า URL เว็บไซต์เปิดเป็นสาธารณะ หรือสลับไปลองตรวจ Desktop / เปิดดูบน PageSpeed Web โดยตรง"
+            }
             action={
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={psiLoading}
-                onClick={() => void runPageSpeed(device)}
-              >
-                ลองตรวจอีกครั้ง
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={psiLoading}
+                  onClick={() => void runPageSpeed(device, true)}
+                >
+                  ลองตรวจอีกครั้ง
+                </button>
+                {activeProject && (
+                  <a
+                    href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(activeProject.websiteUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                  >
+                    เปิดดูบน PageSpeed Web ↗
+                  </a>
+                )}
+              </>
             }
           />
         )}

@@ -87,6 +87,30 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+export const maxDuration = 60;
+
+const PSI_CACHE_TTL_MS = 15 * 60 * 1000;
+const PSI_TIMEOUT_MS = 90_000;
+const psiMemoryCache = new Map<string, { report: PageSpeedReport; expiresAt: number }>();
+
+function getCachedReport(cacheKey: string): PageSpeedReport | null {
+  const hit = psiMemoryCache.get(cacheKey);
+  if (!hit) return null;
+  if (Date.now() > hit.expiresAt) {
+    psiMemoryCache.delete(cacheKey);
+    return null;
+  }
+  return hit.report;
+}
+
+function setCachedReport(cacheKey: string, report: PageSpeedReport) {
+  if (psiMemoryCache.size > 100) {
+    const oldestKey = psiMemoryCache.keys().next().value;
+    if (oldestKey) psiMemoryCache.delete(oldestKey);
+  }
+  psiMemoryCache.set(cacheKey, { report, expiresAt: Date.now() + PSI_CACHE_TTL_MS });
+}
+
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: "ไม่อนุญาตคำขอจากเว็บไซต์อื่น" }, { status: 403 });
@@ -104,6 +128,7 @@ export async function POST(request: Request) {
 
     const rawUrl = typeof body.url === "string" ? body.url.trim() : "";
     const strategy: "mobile" | "desktop" = body.strategy === "desktop" ? "desktop" : "mobile";
+    const force = body.force === true;
 
     let parsedUrl: URL;
     try {
@@ -123,6 +148,14 @@ export async function POST(request: Request) {
       throw new ApiError("URL ไม่ถูกต้อง กรุณาระบุขึ้นต้นด้วย https://", 400);
     }
 
+    const cacheKey = `${parsedUrl.href}::${strategy}`;
+    if (!force) {
+      const cached = getCachedReport(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, { headers: { "Cache-Control": "no-store" } });
+      }
+    }
+
     const psiUrl = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
     psiUrl.searchParams.set("url", parsedUrl.href);
     psiUrl.searchParams.set("strategy", strategy);
@@ -130,19 +163,32 @@ export async function POST(request: Request) {
     for (const category of ["performance", "seo", "accessibility", "best-practices"]) {
       psiUrl.searchParams.append("category", category);
     }
-    const apiKey = process.env.PAGESPEED_API_KEY?.trim();
+    const apiKey =
+      process.env.PAGESPEED_API_KEY?.trim() ||
+      process.env.GOOGLE_PAGESPEED_API_KEY?.trim() ||
+      "";
     if (apiKey) {
       psiUrl.searchParams.set("key", apiKey);
     }
 
+    const startedAt = Date.now();
+    console.info(
+      `[pagespeed] start url=${parsedUrl.href} strategy=${strategy} hasApiKey=${Boolean(apiKey)}`
+    );
+
     const [psiResponse, robotsProbe, sitemapProbe] = await Promise.all([
       fetch(psiUrl.toString(), {
         cache: "no-store",
-        signal: AbortSignal.timeout(55_000),
+        signal: AbortSignal.timeout(PSI_TIMEOUT_MS),
       }),
       probeUrl(`${parsedUrl.origin}/robots.txt`),
       probeUrl(`${parsedUrl.origin}/sitemap.xml`),
     ]);
+
+    const elapsedSec = ((Date.now() - startedAt) / 1000).toFixed(1);
+    console.info(
+      `[pagespeed] done url=${parsedUrl.href} strategy=${strategy} status=${psiResponse.status} elapsed=${elapsedSec}s`
+    );
 
     const raw = await psiResponse.text();
     let payload: Record<string, unknown>;
@@ -155,15 +201,46 @@ export async function POST(request: Request) {
     if (!psiResponse.ok) {
       const errObj = asRecord(payload.error);
       const errMsg = typeof errObj.message === "string" ? errObj.message : "";
+      console.error(
+        `[pagespeed] error status=${psiResponse.status} elapsed=${elapsedSec}s message=${errMsg.slice(0, 200)}`
+      );
       if (psiResponse.status === 429) {
-        throw new ApiError(
-          "Google PageSpeed Insights จำกัดโควตาชั่วคราว (สามารถเพิ่ม PAGESPEED_API_KEY ฟรีใน .env.local / Vercel เพื่อขยายโควตาเป็น 25,000 ครั้ง/วัน)",
-          429
+        return NextResponse.json(
+          {
+            error: apiKey
+              ? "โควตา Google PageSpeed API ชั่วคราวเต็ม"
+              : "ยังไม่ได้ตั้งค่า PAGESPEED_API_KEY จึงติดโควตาฟรีแบบไม่ใช้คีย์ของ Google",
+            hint: apiKey
+              ? "รอสักครู่แล้วกดลองตรวจอีกครั้ง หรือเปิดดูผลบน PageSpeed Web โดยตรง"
+              : "เพิ่ม PAGESPEED_API_KEY ฟรีใน .env.local (แล้วรีสตาร์ตเซิร์ฟเวอร์) เพื่อรับโควตา 25,000 ครั้ง/วัน",
+          },
+          { status: 429 }
         );
       }
-      throw new ApiError(
-        errMsg ? `Google PageSpeed ตรวจไม่สำเร็จ: ${errMsg.slice(0, 180)}` : "ตรวจ PageSpeed ไม่สำเร็จ",
-        502
+      if (psiResponse.status === 400 || psiResponse.status === 403) {
+        const isKeyIssue = /api key|has not been used|disabled|accessNotConfigured/i.test(errMsg);
+        return NextResponse.json(
+          {
+            error: isKeyIssue
+              ? "PAGESPEED_API_KEY ไม่ถูกต้อง หรือยังไม่ได้เปิดใช้งาน PageSpeed Insights API ใน Google Cloud"
+              : errMsg
+                ? `Google PageSpeed ตรวจไม่สำเร็จ (HTTP ${psiResponse.status}): ${errMsg.slice(0, 180)}`
+                : `ตรวจ PageSpeed ไม่สำเร็จ (HTTP ${psiResponse.status})`,
+            hint: isKeyIssue
+              ? "ตรวจว่าเปิด Enable 'PageSpeed Insights API' ใน Google Cloud Console และคัดลอกคีย์ใน .env.local ครบทุกตัวอักษร แล้วรีสตาร์ตเซิร์ฟเวอร์"
+              : "ตรวจว่า URL เปิดเข้าถึงได้จากภายนอก หรือลองเปิดดูผลบน PageSpeed Web โดยตรง",
+          },
+          { status: psiResponse.status }
+        );
+      }
+      return NextResponse.json(
+        {
+          error: errMsg
+            ? `Google PageSpeed ตรวจไม่สำเร็จ (HTTP ${psiResponse.status}): ${errMsg.slice(0, 180)}`
+            : `ตรวจ PageSpeed ไม่สำเร็จ (HTTP ${psiResponse.status})`,
+          hint: "ลองสลับเป็น Desktop (มักตรวจเร็วกว่า Mobile) หรือลองกดตรวจอีกครั้งในอีกสักครู่",
+        },
+        { status: 502 }
       );
     }
 
@@ -267,17 +344,24 @@ export async function POST(request: Request) {
       },
     };
 
+    setCachedReport(cacheKey, report);
     return NextResponse.json(report, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
-    const isTimeout = error instanceof Error && /TimeoutError|AbortError/i.test(error.name);
+    const errName = error instanceof Error ? error.name : "UnknownError";
+    const errMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[pagespeed] exception name=${errName} message=${errMessage.slice(0, 200)}`);
+    const isTimeout = /TimeoutError|AbortError/i.test(errName);
     return NextResponse.json(
       {
         error: isTimeout
-          ? "Google PageSpeed ใช้เวลานานเกินกำหนด กรุณาลองกดตรวจอีกครั้ง"
-          : "ไม่สามารถเชื่อมต่อ Google PageSpeed Insights ได้ในขณะนี้",
+          ? `Google PageSpeed ใช้เวลานานเกิน ${Math.round(PSI_TIMEOUT_MS / 1000)} วินาที (เว็บเป้าหมายอาจโหลดสคริปต์หนักบน Mobile)`
+          : `เชื่อมต่อ Google PageSpeed Insights ไม่สำเร็จ (${errName})`,
+        hint: isTimeout
+          ? "ลองสลับไปตรวจ Desktop ก่อน (มักใช้เวลาน้อยกว่า Mobile) หรือกดเปิดดูบน PageSpeed Web โดยตรง และดูรายละเอียดเพิ่มเติมใน terminal ของเซิร์ฟเวอร์"
+          : "ตรวจการเชื่อมต่ออินเทอร์เน็ตของเครื่อง/เซิร์ฟเวอร์ หรือดู log `[pagespeed]` ใน terminal",
       },
       { status: isTimeout ? 504 : 502 }
     );
