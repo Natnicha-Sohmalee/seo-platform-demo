@@ -9,6 +9,7 @@ export type ContentStore = {
   ownerId: string;
   load<T>(key: string): Promise<CloudRecord<T> | null>;
   save<T>(key: string, payload: T): Promise<string>;
+  remove(key: string): Promise<void>;
   list(prefix: "article:" | "brief:" | "keyword-set:"): Promise<CloudListRow[]>;
   importRecord(key: string, payload: unknown): Promise<void>;
 };
@@ -107,6 +108,18 @@ export function createContentStore(ownerId: string): ContentStore {
         const row = data as Row;
         remember(key, row);
         return row.updated_at;
+      });
+    },
+    remove(key: string) {
+      return serial(key, async () => {
+        await checkAccount();
+        const { error } = await client
+          .from(tableFor(key))
+          .delete()
+          .eq("user_id", ownerId)
+          .eq("storage_key", key);
+        if (error) throw databaseError(error);
+        revisions.delete(key);
       });
     },
     async list(prefix) {

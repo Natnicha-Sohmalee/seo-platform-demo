@@ -6,6 +6,7 @@ import { ContentAccountBoundary, useContentStore } from "@/components/content-ac
 import WorkspaceShell from "@/components/workspace-shell";
 import { Badge, Icon, WsTitle } from "@/components/ui-icons";
 import {
+  MAX_KEYWORD_ROWS,
   buildKeywordRows,
   guessMapping,
   isKeywordSelection,
@@ -14,6 +15,7 @@ import {
   volumeBounds,
   type ColumnMapping,
   type KeywordMetadata,
+  type KeywordRow,
   type KeywordSelection,
   type KeywordSet,
   type ParsedKeywordFile,
@@ -21,8 +23,20 @@ import {
 import styles from "./keywords.module.css";
 import { createUuid } from "@/lib/uuid";
 
-type SetEntry = { id: string; name: string; count: number };
+type SetEntry = {
+  id: string;
+  name: string;
+  count: number;
+  location: string;
+  importedAt: string;
+};
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function csvCell(value: string): string {
+  const safe = value.replace(/"/g, '""');
+  return /[",\r\n]/.test(safe) ? `"${safe}"` : safe;
+}
 
 export default function KeywordsPage() {
   return (
@@ -42,6 +56,7 @@ function KeywordWorkspace() {
   const params = useSearchParams();
   const setParam = params.get("set");
   const activeId = setParam && UUID.test(setParam) ? setParam : "";
+
   const [sets, setSets] = useState<SetEntry[]>([]);
   const [dataset, setDataset] = useState<KeywordSet | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,10 +64,13 @@ function KeywordWorkspace() {
   const [reload, setReload] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [onlySelected, setOnlySelected] = useState(false);
   const [sort, setSort] = useState("volume");
   const [visible, setVisible] = useState(50);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+
+  // Import panel states
   const [showImport, setShowImport] = useState(!activeId);
   const [file, setFile] = useState<File | null>(null);
   const [delimiter, setDelimiter] = useState("auto");
@@ -67,10 +85,21 @@ function KeywordWorkspace() {
   const [importing, setImporting] = useState(false);
   const [reading, setReading] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+
+  // Management states (rename / delete / manual add)
+  const [mutating, setMutating] = useState(false);
+  const [manageMessage, setManageMessage] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [newKeyword, setNewKeyword] = useState("");
+  const [newVolume, setNewVolume] = useState("");
+  const [newCompetition, setNewCompetition] = useState("");
+
   const fileRevision = useRef(0);
   const listRevision = useRef(0);
   const createLock = useRef(false);
   const importLock = useRef(false);
+  const mutateLock = useRef(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -87,14 +116,20 @@ function KeywordWorkspace() {
     try {
       const rows = await store.list("keyword-set:");
       if (current !== listRevision.current) return;
-      setSets(
-        rows
-          .filter((row) => isKeywordSet(row.value.job))
-          .map((row) => {
-            const value = row.value.job as KeywordSet;
-            return { id: value.id, name: value.name, count: value.rows.length };
-          })
-      );
+      const list = rows
+        .filter((row) => isKeywordSet(row.value.job))
+        .map((row) => {
+          const value = row.value.job as KeywordSet;
+          return {
+            id: value.id,
+            name: value.name,
+            count: value.rows.length,
+            location: value.metadata.location,
+            importedAt: value.metadata.importedAt,
+          };
+        })
+        .sort((a, b) => Date.parse(b.importedAt) - Date.parse(a.importedAt));
+      setSets(list);
     } catch (error) {
       if (current === listRevision.current)
         setLoadError(error instanceof Error ? error.message : "โหลดชุดคีย์เวิร์ดไม่ได้");
@@ -113,9 +148,12 @@ function KeywordWorkspace() {
     setDataset(null);
     setSelected([]);
     setQuery("");
+    setOnlySelected(false);
     setVisible(50);
     setCreateError("");
     setLoadError("");
+    setManageMessage("");
+    setEditingName(false);
     if (!activeId) {
       setLoading(false);
       return;
@@ -128,6 +166,7 @@ function KeywordWorkspace() {
         if (!saved || !isKeywordSet(saved.job) || saved.job.id !== activeId)
           throw new Error("ไม่พบชุดคีย์เวิร์ดนี้ในบัญชี หรือข้อมูลอ่านไม่ได้");
         setDataset(saved.job);
+        setRenameDraft(saved.job.name);
       })
       .catch((error) => {
         if (active)
@@ -158,7 +197,10 @@ function KeywordWorkspace() {
   const filtered = useMemo(() => {
     const term = query.normalize("NFKC").trim().toLowerCase();
     return (dataset?.rows ?? [])
-      .filter((row) => !term || row.keyword.normalize("NFKC").toLowerCase().includes(term))
+      .filter((row) => {
+        if (onlySelected && !selected.includes(row.id)) return false;
+        return !term || row.keyword.normalize("NFKC").toLowerCase().includes(term);
+      })
       .sort((a, b) => {
         if (sort === "name") return a.keyword.localeCompare(b.keyword, "th");
         const av = volumeBounds(a.volume);
@@ -168,7 +210,7 @@ function KeywordWorkspace() {
         if (!bv) return -1;
         return bv.low - av.low || bv.high - av.high || a.keyword.localeCompare(b.keyword, "th");
       });
-  }, [dataset, query, sort]);
+  }, [dataset, query, sort, onlySelected, selected]);
 
   const terms = selected
     .map((id) => dataset?.rows.find((row) => row.id === id))
@@ -245,6 +287,147 @@ function KeywordWorkspace() {
     }
   }
 
+  async function persistDataset(next: KeywordSet, successText: string) {
+    if (mutateLock.current) return;
+    if (!isKeywordSet(next)) {
+      setManageMessage("ข้อมูลคีย์เวิร์ดไม่ถูกต้อง (ต้องมีชื่อชุดและอย่างน้อย 1 คำ สูงสุด 1,000 คำ)");
+      return;
+    }
+    mutateLock.current = true;
+    setMutating(true);
+    setManageMessage("");
+    try {
+      await store.save(`keyword-set:${next.id}`, next);
+      if (!mounted.current) return;
+      setDataset(next);
+      setRenameDraft(next.name);
+      setSets((previous) =>
+        previous.map((item) =>
+          item.id === next.id ? { ...item, name: next.name, count: next.rows.length } : item
+        )
+      );
+      setManageMessage(successText);
+    } catch (error) {
+      if (mounted.current) {
+        setManageMessage(error instanceof Error ? error.message : "บันทึกการแก้ไขไม่สำเร็จ");
+      }
+    } finally {
+      mutateLock.current = false;
+      if (mounted.current) setMutating(false);
+    }
+  }
+
+  async function handleRenameSet(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!dataset) return;
+    const trimmed = renameDraft.trim().slice(0, 120);
+    if (!trimmed) {
+      setManageMessage("กรุณากรอกชื่อชุดคีย์เวิร์ด");
+      return;
+    }
+    if (trimmed === dataset.name) {
+      setEditingName(false);
+      return;
+    }
+    await persistDataset({ ...dataset, name: trimmed }, "เปลี่ยนชื่อชุดคีย์เวิร์ดแล้ว");
+    if (mounted.current) setEditingName(false);
+  }
+
+  async function handleDeleteSet(target: { id: string; name: string }) {
+    if (mutateLock.current || creating || importing) return;
+    const confirmed = window.confirm(
+      `ต้องการลบชุดคีย์เวิร์ด "${target.name}" ออกจากบัญชีใช่หรือไม่?`
+    );
+    if (!confirmed) return;
+
+    mutateLock.current = true;
+    setMutating(true);
+    setManageMessage("");
+    try {
+      await store.remove(`keyword-set:${target.id}`);
+      if (!mounted.current) return;
+      const remaining = sets.filter((item) => item.id !== target.id);
+      setSets(remaining);
+      if (activeId === target.id) {
+        setDataset(null);
+        setSelected([]);
+        if (remaining.length > 0) {
+          router.replace(`/keywords?set=${remaining[0].id}`);
+        } else {
+          router.replace("/keywords");
+        }
+      }
+      setImportMessage(`ลบชุดคีย์เวิร์ด "${target.name}" เรียบร้อยแล้ว`);
+    } catch (error) {
+      if (mounted.current) {
+        setManageMessage(error instanceof Error ? error.message : "ลบชุดคีย์เวิร์ดไม่สำเร็จ");
+      }
+    } finally {
+      mutateLock.current = false;
+      if (mounted.current) setMutating(false);
+    }
+  }
+
+  async function handleAddManualKeyword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!dataset || mutateLock.current) return;
+    const kw = newKeyword.trim().slice(0, 200);
+    if (!kw) return;
+
+    const normalized = kw.normalize("NFKC").toLowerCase();
+    if (dataset.rows.some((r) => r.keyword.normalize("NFKC").trim().toLowerCase() === normalized)) {
+      setManageMessage(`มีคำว่า "${kw}" อยู่ในชุดนี้แล้ว`);
+      return;
+    }
+    if (dataset.rows.length >= MAX_KEYWORD_ROWS) {
+      setManageMessage(`ชุดคีย์เวิร์ดเก็บได้สูงสุด ${MAX_KEYWORD_ROWS} คำ`);
+      return;
+    }
+
+    const row: KeywordRow = {
+      id: `kw-${createUuid().slice(0, 12)}`,
+      keyword: kw,
+      volume: newVolume.trim().slice(0, 100),
+      adsCompetition: newCompetition.trim().slice(0, 100),
+    };
+    const next: KeywordSet = { ...dataset, rows: [row, ...dataset.rows] };
+    await persistDataset(next, `เพิ่มคำว่า "${kw}" ลงในชุดแล้ว`);
+    if (mounted.current) {
+      setNewKeyword("");
+      setNewVolume("");
+      setNewCompetition("");
+    }
+  }
+
+  async function handleDeleteRow(row: KeywordRow) {
+    if (!dataset || mutateLock.current) return;
+    if (dataset.rows.length <= 1) {
+      setManageMessage("ชุดคีย์เวิร์ดต้องมีอย่างน้อย 1 คำ หากไม่ต้องการใช้งานแล้วให้กด “ลบชุดนี้” แทน");
+      return;
+    }
+    const nextRows = dataset.rows.filter((item) => item.id !== row.id);
+    setSelected((prev) => prev.filter((id) => id !== row.id));
+    await persistDataset({ ...dataset, rows: nextRows }, `ลบคำว่า "${row.keyword}" ออกแล้ว`);
+  }
+
+  function exportCurrentCsv() {
+    if (!dataset) return;
+    const header = "Keyword,Avg. monthly searches,Competition";
+    const lines = dataset.rows.map(
+      (r) => `${csvCell(r.keyword)},${csvCell(r.volume)},${csvCell(r.adsCompetition)}`
+    );
+    const url = URL.createObjectURL(
+      new Blob(["\uFEFF" + [header, ...lines].join("\r\n") + "\r\n"], {
+        type: "text/csv;charset=utf-8",
+      })
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${dataset.name.replace(/[\\/:*?"<>|]/g, "-") || "keywords"}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function toggle(id: string, checked: boolean) {
     setCreateError("");
     if (checked && selected.length >= 5) {
@@ -308,7 +491,7 @@ function KeywordWorkspace() {
       <WsTitle
         eyebrow="Keyword Workspace"
         title="จัดการคีย์เวิร์ด"
-        body="นำเข้าข้อมูล ค้นหา และเลือกคำที่ต้องการใช้วางแผนบทความ"
+        body="นำเข้าไฟล์ CSV เพิ่มหรือลบคำ จัดการชุดข้อมูล และเลือกคำสำหรับวางแผนบทความ"
         action={
           <button
             type="button"
@@ -560,38 +743,177 @@ function KeywordWorkspace() {
         </div>
       )}
 
-      <section className="import-panel" aria-label="เลือกชุดคีย์เวิร์ด" style={{ marginBottom: 16 }}>
-        <label className={styles.field}>
-          ชุดคีย์เวิร์ดที่บันทึกไว้
-          <select
-            value={activeId}
-            disabled={creating || importing}
-            onChange={(event) =>
-              router.replace(event.target.value ? `/keywords?set=${event.target.value}` : "/keywords")
-            }
-          >
-            <option value="">เลือกชุดข้อมูล</option>
-            {sets.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} · {item.count} คำ
-              </option>
-            ))}
-          </select>
-        </label>
-        {loading && (
-          <p role="status" style={{ marginTop: 10, color: "var(--muted)", fontSize: 13 }}>
-            กำลังเปิดชุดข้อมูล…
-          </p>
-        )}
-        {!activeId && !sets.length && (
+      <section className="import-panel" aria-label="ชุดคีย์เวิร์ดที่บันทึกไว้" style={{ marginBottom: 16 }}>
+        <div className={styles.setsHeader}>
+          <div>
+            <p className="overline">Saved Keyword Sets</p>
+            <h3>ชุดคีย์เวิร์ดที่บันทึกไว้ ({sets.length})</h3>
+          </div>
+          {loading && <Badge tone="gray">กำลังเปิดชุดข้อมูล…</Badge>}
+        </div>
+
+        {sets.length === 0 ? (
           <p className={styles.note} style={{ marginBottom: 0 }}>
-            เริ่มจากนำเข้าไฟล์ด้านบน แล้วชุดข้อมูลจะเปิดได้จากบัญชีเดียวกันในเบราว์เซอร์อื่น
+            ยังไม่มีชุดคีย์เวิร์ด เริ่มจากกด “นำเข้าไฟล์ CSV” ด้านบน แล้วชุดข้อมูลจะเปิดและจัดการได้จากบัญชีเดียวกันทุกเบราว์เซอร์
           </p>
+        ) : (
+          <div className={styles.setsGrid}>
+            {sets.map((item) => {
+              const isActive = activeId === item.id;
+              return (
+                <article
+                  key={item.id}
+                  className={`${styles.setCard} ${isActive ? styles.setCardActive : ""}`}
+                >
+                  <button
+                    type="button"
+                    className={styles.setSelectBtn}
+                    disabled={creating || importing || mutating}
+                    onClick={() => router.replace(`/keywords?set=${item.id}`)}
+                  >
+                    <div className={styles.setTitleRow}>
+                      <b>{item.name}</b>
+                      <Badge tone={isActive ? "green" : "gray"}>{item.count} คำ</Badge>
+                    </div>
+                    <small>
+                      {item.location || "ไม่ระบุพื้นที่"} ·{" "}
+                      {new Date(item.importedAt).toLocaleDateString("th-TH")}
+                    </small>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.setDeleteBtn}
+                    disabled={creating || importing || mutating}
+                    title={`ลบชุด ${item.name}`}
+                    onClick={() => void handleDeleteSet(item)}
+                  >
+                    ลบ
+                  </button>
+                </article>
+              );
+            })}
+          </div>
         )}
       </section>
 
       {dataset && (
         <>
+          <section className="import-panel" aria-label="จัดการชุดคีย์เวิร์ดที่เปิดอยู่" style={{ marginBottom: 16 }}>
+            <div className={styles.activeSetBar}>
+              {editingName ? (
+                <form className={styles.renameForm} onSubmit={handleRenameSet}>
+                  <input
+                    className="seo-input"
+                    value={renameDraft}
+                    maxLength={120}
+                    required
+                    disabled={mutating}
+                    onChange={(e) => setRenameDraft(e.target.value)}
+                    placeholder="ชื่อชุดคีย์เวิร์ด"
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={mutating}>
+                    บันทึกชื่อ
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={mutating}
+                    onClick={() => {
+                      setEditingName(false);
+                      setRenameDraft(dataset.name);
+                    }}
+                  >
+                    ยกเลิก
+                  </button>
+                </form>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{dataset.name}</h2>
+                    <Badge tone="green">{dataset.rows.length} คำ</Badge>
+                  </div>
+                  <p className={styles.note} style={{ margin: "4px 0 0" }}>
+                    {dataset.metadata.location || "ไม่ระบุพื้นที่"} ·{" "}
+                    {dataset.metadata.fromMonth
+                      ? `${dataset.metadata.fromMonth} ถึง ${dataset.metadata.toMonth}`
+                      : "ไม่ระบุช่วงข้อมูล"}
+                  </p>
+                </div>
+              )}
+
+              {!editingName && (
+                <div className={styles.activeSetActions}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={mutating}
+                    onClick={() => {
+                      setRenameDraft(dataset.name);
+                      setEditingName(true);
+                    }}
+                  >
+                    <Icon name="edit" size={16} /> เปลี่ยนชื่อ
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={exportCurrentCsv}
+                  >
+                    <Icon name="download" size={16} /> ส่งออก CSV
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-secondary ${styles.dangerBtn}`}
+                    disabled={mutating}
+                    onClick={() => void handleDeleteSet({ id: dataset.id, name: dataset.name })}
+                  >
+                    ลบชุดนี้
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <form className={styles.addRowForm} onSubmit={handleAddManualKeyword}>
+              <input
+                className="seo-input"
+                value={newKeyword}
+                maxLength={200}
+                required
+                disabled={mutating}
+                onChange={(e) => setNewKeyword(e.target.value)}
+                placeholder="เพิ่มคีย์เวิร์ดใหม่เอง เช่น เมล็ดกาแฟคั่วกลาง..."
+              />
+              <input
+                className="seo-input"
+                value={newVolume}
+                maxLength={100}
+                disabled={mutating}
+                onChange={(e) => setNewVolume(e.target.value)}
+                placeholder="ค้นหา/เดือน (ไม่บังคับ)"
+              />
+              <select
+                className="seo-input"
+                value={newCompetition}
+                disabled={mutating}
+                onChange={(e) => setNewCompetition(e.target.value)}
+              >
+                <option value="">การแข่งขันโฆษณา (ไม่ระบุ)</option>
+                <option value="ต่ำ">ต่ำ</option>
+                <option value="ปานกลาง">ปานกลาง</option>
+                <option value="สูง">สูง</option>
+              </select>
+              <button type="submit" className="btn btn-primary" disabled={mutating || !newKeyword.trim()}>
+                <Icon name="plus" size={17} /> เพิ่มคำ
+              </button>
+            </form>
+
+            {manageMessage && (
+              <p role="status" className={styles.notice} style={{ marginBottom: 0 }}>
+                {manageMessage}
+              </p>
+            )}
+          </section>
+
           <div className="selected-keywords" aria-label="คำที่เลือกสำหรับบทความ">
             <div>
               <p className="overline">คำที่เลือก {terms.length}/5</p>
@@ -603,32 +925,42 @@ function KeywordWorkspace() {
                   เลือกคีย์เวิร์ดจากตารางด้านล่างได้สูงสุด 5 คำ (คำแรกเป็นคำหลัก)
                 </span>
               ) : (
-                terms.map((term, index) => (
-                  <button
-                    type="button"
-                    key={term.id}
-                    className={index === 0 ? "primary-chip" : ""}
-                    disabled={creating}
-                    onClick={() => {
-                      if (index > 0) {
-                        setSelected((previous) => [
-                          term.id,
-                          ...previous.filter((id) => id !== term.id),
-                        ]);
-                      }
-                    }}
-                  >
-                    {index === 0 ? "คำหลัก" : "ตั้งเป็นคำหลัก"} · {term.keyword}
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggle(term.id, false);
+                <>
+                  {terms.map((term, index) => (
+                    <button
+                      type="button"
+                      key={term.id}
+                      className={index === 0 ? "primary-chip" : ""}
+                      disabled={creating}
+                      onClick={() => {
+                        if (index > 0) {
+                          setSelected((previous) => [
+                            term.id,
+                            ...previous.filter((id) => id !== term.id),
+                          ]);
+                        }
                       }}
                     >
-                      ×
-                    </span>
+                      {index === 0 ? "คำหลัก" : "ตั้งเป็นคำหลัก"} · {term.keyword}
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggle(term.id, false);
+                        }}
+                      >
+                        ×
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={styles.clearChip}
+                    disabled={creating}
+                    onClick={() => setSelected([])}
+                  >
+                    ล้างทั้งหมด
                   </button>
-                ))
+                </>
               )}
             </div>
             <button
@@ -663,6 +995,18 @@ function KeywordWorkspace() {
                 />
               </div>
               <select
+                aria-label="กรองรายการ"
+                value={onlySelected ? "selected" : "all"}
+                onChange={(event) => {
+                  setOnlySelected(event.target.value === "selected");
+                  setVisible(50);
+                }}
+              >
+                <option value="all">แสดง: ทั้งหมด ({dataset.rows.length})</option>
+                <option value="selected">แสดง: เฉพาะที่เลือก ({selected.length})</option>
+              </select>
+              <select
+                aria-label="เรียงตาม"
                 value={sort}
                 onChange={(event) => {
                   setSort(event.target.value);
@@ -673,7 +1017,7 @@ function KeywordWorkspace() {
                 <option value="name">เรียง: ก–ฮ</option>
               </select>
               <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: "auto" }}>
-                {dataset.name} · {filtered.length} คำ
+                แสดง {Math.min(visible, filtered.length)} จาก {filtered.length} คำ
               </span>
             </div>
 
@@ -681,11 +1025,7 @@ function KeywordWorkspace() {
               <Icon name="alert" size={17} />
               <span>
                 <b>หมายเหตุ:</b> ค่า “การแข่งขัน” หมายถึงการแข่งขันโฆษณา Google Ads
-                ไม่ใช่ความยากในการทำ SEO และไม่รับประกันอันดับ ({dataset.metadata.location || "ไม่ระบุพื้นที่"} ·{" "}
-                {dataset.metadata.fromMonth
-                  ? `${dataset.metadata.fromMonth} ถึง ${dataset.metadata.toMonth}`
-                  : "ไม่ระบุช่วงข้อมูล"}
-                )
+                ไม่ใช่ความยากในการทำ SEO และไม่รับประกันอันดับ
               </span>
             </div>
 
@@ -698,6 +1038,7 @@ function KeywordWorkspace() {
                     <th scope="col">ค้นหาเฉลี่ย/เดือน</th>
                     <th scope="col">การแข่งขันโฆษณา</th>
                     <th scope="col">บทบาท</th>
+                    <th scope="col" style={{ width: 80, textAlign: "right" }}>จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -711,7 +1052,7 @@ function KeywordWorkspace() {
                             type="checkbox"
                             aria-label={`เลือก ${row.keyword}`}
                             checked={isSelected}
-                            disabled={creating}
+                            disabled={creating || mutating}
                             onChange={(event) => toggle(row.id, event.target.checked)}
                           />
                         </td>
@@ -735,12 +1076,26 @@ function KeywordWorkspace() {
                             "—"
                           )}
                         </td>
+                        <td style={{ textAlign: "right" }}>
+                          <button
+                            type="button"
+                            className={styles.rowDeleteBtn}
+                            disabled={mutating || creating}
+                            onClick={() => void handleDeleteRow(row)}
+                          >
+                            ลบ
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+
+            {filtered.length === 0 && (
+              <div className="empty-table">ไม่พบคีย์เวิร์ดที่ตรงกับตัวกรอง</div>
+            )}
 
             {filtered.length > visible && (
               <div style={{ padding: 16, textAlign: "center" }}>

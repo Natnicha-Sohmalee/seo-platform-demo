@@ -48,6 +48,158 @@
   font-size: 13px;
 }
 
+.setsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.setsHeader h3 {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.setsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.setCard {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fbfcfa;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.setCard:hover {
+  border-color: #a9c4b9;
+}
+
+.setCardActive {
+  border-color: var(--green);
+  background: var(--mint);
+}
+
+.setSelectBtn {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 12px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.setTitleRow b {
+  font-size: 14px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setSelectBtn small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.setDeleteBtn {
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: transparent;
+  color: #a43d34;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 13px;
+  align-self: stretch;
+}
+
+.setDeleteBtn:hover {
+  background: #fbe8e5;
+}
+
+.activeSetBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.activeSetActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.renameForm {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.renameForm input {
+  max-width: 340px;
+}
+
+.dangerBtn {
+  color: #a43d34 !important;
+  border-color: #f0c2bc !important;
+  background: #fdf2f0 !important;
+}
+
+.dangerBtn:hover {
+  background: #fbe8e5 !important;
+}
+
+.addRowForm {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr auto;
+  gap: 8px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.clearChip {
+  color: #a43d34 !important;
+  border-color: #f0c2bc !important;
+  background: #fdf2f0 !important;
+}
+
+.rowDeleteBtn {
+  border: 0;
+  background: transparent;
+  color: #a43d34;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.rowDeleteBtn:hover {
+  background: #fbe8e5;
+}
+
 .tableWrap {
   overflow-x: auto;
 }
@@ -75,4 +227,10 @@
 
 .selectedRow {
   background: #f2f9f6;
+}
+
+@media (max-width: 800px) {
+  .addRowForm {
+    grid-template-columns: 1fr;
+  }
 }
