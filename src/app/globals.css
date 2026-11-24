@@ -57,7 +57,7 @@
   box-sizing: border-box;
 }
 .container {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1280px, calc(100% - 48px));
   margin-inline: auto;
 }
 .narrow {
@@ -1566,9 +1566,10 @@ sup {
   display: none;
 }
 .ws-content {
-  padding: 35px;
-  max-width: 1450px;
-  margin: auto;
+  padding: 32px 40px;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
 }
 .ws-title {
   display: flex;
@@ -1578,28 +1579,29 @@ sup {
   margin-bottom: 28px;
 }
 .ws-title h1 {
-  margin: 3px 0;
-  font-size: 31px;
+  margin: 4px 0 6px;
+  font-size: 32px;
   letter-spacing: -0.02em;
   font-weight: 700;
 }
 .ws-title > div > p:last-child {
   color: var(--muted);
+  font-size: 15px;
   margin: 0;
 }
 .project-start {
   display: grid;
-  grid-template-columns: 1.6fr 0.8fr;
-  gap: 15px;
-  margin-bottom: 20px;
+  grid-template-columns: 1.6fr 0.85fr;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 .start-card {
   display: flex;
   text-align: left;
-  padding: 20px;
+  padding: 22px 24px;
   background: white;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   gap: 16px;
   text-decoration: none;
   color: inherit;
@@ -1613,23 +1615,26 @@ sup {
   min-width: 0;
 }
 .start-card h3 {
-  margin: 0 0 3px;
+  margin: 0 0 4px;
   font-weight: 700;
-  font-size: 17px;
+  font-size: 18px;
 }
 .start-card p {
   color: var(--muted);
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .inline-inputs {
   display: flex;
-  gap: 8px;
-  margin-top: 15px;
+  gap: 10px;
+  margin-top: 16px;
   align-items: center;
 }
 .inline-inputs input {
-  max-width: 240px;
+  flex: 1;
+  min-width: 180px;
+  max-width: 300px;
 }
 .no-site {
   cursor: pointer;
@@ -2213,5 +2218,279 @@ sup {
   }
   .studio-card {
     padding: 17px;
+  }
+}
+
+/* Round 1: Accessibility, Focus, Reduced Motion & USA/REL Primitives */
+:focus-visible {
+  outline: 3px solid #7ec3ad;
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 14px;
+  z-index: 100;
+  background: var(--green);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 8px 20px #0c6b5835;
+}
+.skip-link:focus {
+  top: 14px;
+}
+
+.ws-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: #0b241f80;
+  backdrop-filter: blur(2px);
+}
+
+.ws-breadcrumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-home-link {
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.ws-menu,
+.sidebar-close {
+  min-width: 44px;
+  min-height: 44px;
+  display: none;
+  place-items: center;
+  border-radius: 9px;
+}
+
+/* TermHelp Tooltip (USA-03) */
+.term-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.term-help-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  color: inherit;
+  font-weight: inherit;
+  border-radius: 6px;
+  text-decoration: underline dotted #88b5a6;
+  text-underline-offset: 3px;
+}
+
+.term-help-btn:hover {
+  color: var(--green);
+}
+
+.term-help-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--mint);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.term-popover {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  width: min(290px, 82vw);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #102f2b;
+  color: #edf7f3;
+  box-shadow: 0 14px 32px #0a201c38;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: left;
+  white-space: normal;
+}
+
+.term-popover strong {
+  color: #9ee4cd;
+  font-size: 12px;
+}
+
+/* SourceStamp (REL-02) */
+.source-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f2f6f4;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.source-stamp svg {
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.source-stamp b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ActionableNotice (USA-08 & REL-03) */
+.action-notice {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 15px 17px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  margin: 14px 0;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.action-notice-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.action-notice-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-notice-body strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.action-notice-body p {
+  margin: 0;
+}
+
+.action-notice-next {
+  margin-top: 6px !important;
+  font-size: 12px;
+}
+
+.action-notice-action {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-notice-error {
+  background: #fdf2f0;
+  border-color: #f0c2bc;
+  color: #8f2d25;
+}
+.action-notice-error .action-notice-icon {
+  background: #fbe3df;
+  color: #a43d34;
+}
+
+.action-notice-warning {
+  background: #fff9ed;
+  border-color: #efd79b;
+  color: #7f5a1f;
+}
+.action-notice-warning .action-notice-icon {
+  background: #f8e7c0;
+  color: #95601b;
+}
+
+.action-notice-info {
+  background: #eff8f3;
+  border-color: #c6e3d7;
+  color: #084d42;
+}
+.action-notice-info .action-notice-icon {
+  background: #dcf1e7;
+  color: var(--green);
+}
+
+.action-notice-insufficient {
+  background: #f4f6f5;
+  border-color: #d6dfdc;
+  color: #465652;
+}
+.action-notice-insufficient .action-notice-icon {
+  background: #e6ecea;
+  color: #5d6c68;
+}
+
+@media (max-width: 800px) {
+  .workspace {
+    overflow-x: clip;
+  }
+  .ws-menu {
+    display: inline-grid;
+  }
+  .sidebar-close {
+    display: inline-grid !important;
+    top: 16px;
+    right: 10px;
+  }
+  .ws-sidebar nav a,
+  .ws-sidebar nav button {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .ws-home-link {
+    display: none;
+  }
+  .ws-content {
+    padding: 16px 12px;
+  }
+  .ws-title h1 {
+    font-size: 24px;
+  }
+  .btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
